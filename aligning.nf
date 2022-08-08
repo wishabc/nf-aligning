@@ -144,7 +144,7 @@ process convert_to_cram {
 
   publishDir params.outdir
 
-  cpus params.cramthreads / 2
+  cpus params.threads
 
   input:
   tuple val(sample_id), path(bam), path(bam_index)
@@ -158,7 +158,7 @@ process convert_to_cram {
   samtools view "${bam}" \
     -C -O cram,version=3.0,level=7,lossy_names=0 \
     -T "${params.genome}.fa}" \
-    --threads "${params.cramthreads}" \
+    --threads "${task.cpus}" \
     --write-index \
     -o "${cramfile}"
   """
@@ -185,9 +185,7 @@ workflow aligning {
   take:
     trimmed_reads
   main:
-
     aligned_files = set_key_for_group_tuple(bam_files) | align_reads
-      
     groups_to_merge = aligned_files.groupTuple()
 
     marked_dups_files = merge_bam(groups_to_merge) | mark_duplicates | filter | cram
@@ -199,7 +197,7 @@ workflow {
     fastq_trimmed_paired = Channel
       .fromPath(params.samples_file)
       .splitCsv(header:true, sep:'\t')
-		  .map(row -> tuple( row.group_key, row.align_id, row.reads1, 
+		  .map(row -> tuple( row.sample_id, row.align_id, row.reads1, 
       row.reads2, row.is_paired))
     aligning(fastq_trimmed_paired)
 }
