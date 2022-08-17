@@ -1,9 +1,12 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-process align_paired {
+conda_env = "/home/sabramov/miniconda3/envs/babachi" //FIXME
+
+process align_reads {
 
   cpus params.threads
+  conda conda_env
   
   // Interim files could use scratch treatment 
   scratch true
@@ -12,19 +15,19 @@ process align_paired {
     tuple val(group_key), val(align_id), file(trimmed_r1), file(trimmed_r2), val(is_paired)
 
   output:
-    tuple val(group_key), path(name)
+    tuple val(group_key), val(align_id), path(name)
 
   script:
-  name = "${align_id}.sorted.bam"
-  """
-  bwa aln \
-    -Y -l 32 -n 0.04 \
-    -t "${params.threads}" \
-    "${params.genome}" \
-    "${trimmed_r1}" \
-    > out1.sai
-  
-  if test "${is_paired}" = true; then 
+  name = "${align_id}.bam"
+  if is_paired
+    """
+    bwa aln \
+      -Y -l 32 -n 0.04 \
+      -t "${params.threads}" \
+      "${params.genome}" \
+      "${trimmed_r1}" \
+      > out1.sai
+
     bwa aln \
       -Y -l 32 -n 0.04 \
       -t "${params.threads}" \
@@ -37,19 +40,43 @@ process align_paired {
       out1.sai out2.sai \
       "${trimmed_r1}" "${trimmed_r2}" \
     | samtools view -b -t ${params.genome}.fai - \
-    > out.bam
+    > ${name}
+    """
   else
+    """
+    bwa aln \
+      -Y -l 32 -n 0.04 \
+      -t "${params.threads}" \
+      "${params.genome}" \
+      "${trimmed_r1}" \
+      > out.sai
+
     bwa samse \
       -n 10 \
       "${params.genome}" \
-      out1.sai \
+      out.sai \
       "${trimmed_r1}" \
     | samtools view -b -t ${params.genome}.fai - \
-    > out.bam
-  fi
+    > ${name}
+    """
+}
+
+process filter {
+  scratch true
+  conda conda_env
+
+  input:
+    tuple val(group_key), val(align_id), path(bam_file)
+
+  output:
+    tuple val(group_key), path(name)
+  
+  script:
+  name = "${align_id}.sorted.bam"
+  """
   # filter
   python3 $projectDir/bin/filter_reads.py \
-    out.bam \
+    ${bam_file} \
     filtered.bam \
     ${params.nuclear_chroms}
   # sort
@@ -58,9 +85,6 @@ process align_paired {
     > ${name}
   """
 }
-// TODO: combine single and paired into the same process!
-// unfiltered_bam = unfiltered_bam_paired.mix(unfiltered_bam_single)
-
 /*
  * Step 3: Merge alignments into one big ol' file
  */
@@ -69,10 +93,10 @@ process merge_bam {
     tuple val(group_key), path(bamfiles)
 
   output:
-    tuple val(group_key.toString()), file(name), path("${name}.bai")
+    tuple val(group_key), file(name), path("${name}.bai")
 
   script:
-  name = "${group_key.toString()}.bam"
+  name = "${group_key}.bam"
   """
   samtools merge ${name} ${bamfiles}
   samtools index ${name}
@@ -84,10 +108,10 @@ process merge_bam {
  */
 // TODO: single end
 process mark_duplicates {
-  label "modules"
   label 'high_mem'
   tag sample_id
   scratch true
+  conda conda_env
 
   input:
     tuple val(sample_id), path(merged_bam). path(merged_bam_index)
@@ -115,8 +139,7 @@ process mark_duplicates {
 Step 5: Filter down to nuclear reads passing filter
 **/
 process filter {
-  label "modules"
-
+  conda conda_env
   tag sample_id
 
   input:
@@ -141,7 +164,7 @@ process filter {
 Step 6: Convert Filtered Bam to cram file
 **/
 process convert_to_cram {
-
+  conda conda_env
   publishDir params.outdir
 
   cpus params.threads
@@ -176,18 +199,18 @@ workflow alignReads {
 
 // Workaround, so when we groupTuple later, 
 // it knows how many objects in the group are going to be
-def set_key_for_group_tuple(channel_1) {
+def set_key_for_group_tuple(ch) {
   channel_1.groupTuple()
     .map(key, files -> tuple(groupKey(key, files.size()), files))
     .transpose()
 }
-workflow aligning {
+workflow alignReads {
   take:
     trimmed_reads
   main:
     aligned_files = set_key_for_group_tuple(bam_files) | align_reads
     groups_to_merge = aligned_files.groupTuple()
-
+    //FIXME
     marked_dups_files = merge_bam(groups_to_merge) | mark_duplicates | filter | cram
   emit:
     convert_to_cram.out
@@ -199,5 +222,5 @@ workflow {
       .splitCsv(header:true, sep:'\t')
 		  .map(row -> tuple( row.sample_id, row.align_id, row.reads1, 
       row.reads2, row.is_paired))
-    aligning(fastq_trimmed_paired)
+    alignReads(fastq_trimmed_paired)
 }

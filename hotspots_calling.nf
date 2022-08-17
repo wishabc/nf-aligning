@@ -1,12 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-
-nuclear_chroms = "${params.genome}.nuclear.txt"
-chrom_sizes = "${params.genome}.chrom_sizes.bed"
-mappable = "${params.genome}.K76.mappable_only.bed"
-centers = "${params.genome}.K76.center_sites.n100.nuclear.starch"
-
 process call_hotspots {
 	tag "${id}"
 
