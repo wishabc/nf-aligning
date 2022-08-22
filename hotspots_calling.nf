@@ -3,8 +3,6 @@ nextflow.enable.dsl = 2
 
 process call_hotspots {
 	tag "${id}"
-
-	// only publish varw_peaks and hotspots
 	publishDir "${params.outdir}/hotspots"
 
     container "fwip/hotspot2:latest" // FIXME, add info to nextflow.config
@@ -15,8 +13,8 @@ process call_hotspots {
 	    tuple val(id), val(bam_file)
 
 	output:
-	    tuple val(id), val(bam_file), file(name)
-	    tuple val(id), file("${id}.hotspots.fdr005.starch"), file("${id}.hotspots.fdr001.starch")
+	    tuple val(id), val(bam_file), path(name)
+	    tuple val(id), path("${id}.hotspots.fdr005.starch"), path("${id}.hotspots.fdr001.starch")
 
 	script:
     name = "${id}.varw_peaks.fdr0.001.starch"
@@ -28,9 +26,9 @@ process call_hotspots {
 	> nuclear.bam
 
 	hotspot2.sh -F 0.05 -f 0.05 -p varWidth_20_${id} \
-		-M ${mappable} \
-    	-c ${chrom_sizes} \
-    	-C ${centers} \
+		-M ${params.mappable} \
+    	-c ${params.chrom_sizes} \
+    	-C ${params.centers} \
     	nuclear.bam \
     	peaks
 
@@ -40,17 +38,17 @@ process call_hotspots {
 	
     density-peaks.bash \
 		./ \
-		varWidth_20_${indiv_id}_${cell_type} \
+		varWidth_20_${id} \
 		nuclear.cutcounts.starch \
 		nuclear.hotspots.fdr0.001.starch \
-		${chrom_sizes} \
+		${params.chrom_sizes} \
 		nuclear.varw_density.fdr0.001.starch \
 		nuclear.varw_peaks.fdr0.001.starch \
 		\$(cat nuclear.cleavage.total)
 		
-        cp nuclear.varw_peaks.fdr0.001.starch ../${name}
-    	cp nuclear.hotspots.fdr0.05.starch ../${id}.hotspots.fdr0.05.starch
-    	cp nuclear.hotspots.fdr0.001.starch ../${id}.hotspots.fdr0.001.starch
+        mv nuclear.varw_peaks.fdr0.001.starch ../${name}
+    	mv nuclear.hotspots.fdr0.05.starch ../${id}.hotspots.fdr0.05.starch
+    	mv nuclear.hotspots.fdr0.001.starch ../${id}.hotspots.fdr0.001.starch
 	"""
 }
 

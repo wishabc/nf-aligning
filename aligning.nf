@@ -1,14 +1,14 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-conda_env = "/home/sabramov/miniconda3/envs/babachi" //FIXME
+include { set_key_for_group_tuple } from "./helpers"
+
+params.conda = "$moduleDir/environment.yml"
 
 process align_reads {
 
   cpus params.threads
-  conda conda_env
-  
-  // Interim files could use scratch treatment 
+  conda params.conda
   scratch true
 
   input:
@@ -23,47 +23,49 @@ process align_reads {
     """
     bwa aln \
       -Y -l 32 -n 0.04 \
-      -t "${params.threads}" \
-      "${params.genome}" \
+      -t "${task.cpus}" \
+      "${params.genome_fasta_file}" \
       "${trimmed_r1}" \
       > out1.sai
 
     bwa aln \
       -Y -l 32 -n 0.04 \
-      -t "${params.threads}" \
-      "${params.genome}" \
+      -t "${task.cpus}" \
+      "${params.genome_fasta_file}" \
       "${trimmed_r2}" \
       > out2.sai
     bwa sampe \
       -n 10 -a 750 \
-      "${params.genome}" \
+      "${params.genome_fasta_file}" \
       out1.sai out2.sai \
       "${trimmed_r1}" "${trimmed_r2}" \
-    | samtools view -b -t ${params.genome}.fai - \
+    | samtools view -b -T ${params.genome_fasta_file} - \
     > ${name}
     """
   else
     """
     bwa aln \
       -Y -l 32 -n 0.04 \
-      -t "${params.threads}" \
-      "${params.genome}" \
+      -t "${task.cpus}" \
+      "${params.genome_fasta_file}" \
       "${trimmed_r1}" \
       > out.sai
 
     bwa samse \
       -n 10 \
-      "${params.genome}" \
+      "${params.genome_fasta_file}" \
       out.sai \
       "${trimmed_r1}" \
-    | samtools view -b -t ${params.genome}.fai - \
+    | samtools view -b -T ${params.genome_fasta_file} - \
     > ${name}
     """
 }
 
 process filter {
   scratch true
-  conda conda_env
+  conda params.conda
+
+  cpus params.threads
 
   input:
     tuple val(group_key), val(align_id), path(bam_file)
@@ -81,7 +83,7 @@ process filter {
     ${params.nuclear_chroms}
   # sort
   samtools sort \
-    -l 0 -m 1G -@ "${params.threads}" filtered.bam \
+    -l 0 -m 1G -@ "${task.cpus}" filtered.bam \
     > ${name}
   """
 }
@@ -108,16 +110,18 @@ process merge_bam {
  */
 // TODO: single end
 process mark_duplicates {
-  label 'high_mem'
-  tag sample_id
+
+  tag "${sample_id}"
   scratch true
-  conda conda_env
+
+  conda params.conda
 
   input:
-    tuple val(sample_id), path(merged_bam). path(merged_bam_index)
+    tuple val(sample_id), path(merged_bam), path(merged_bam_index)
 
   output:
     tuple val(sample_id), path(name), path("${name}.bai"), path("MarkDuplicates.picard")
+  
   script:
   name = "${sample_id}.marked.bam"
   cmd = "MarkDuplicatesWithMateCigar"
@@ -139,8 +143,8 @@ process mark_duplicates {
 Step 5: Filter down to nuclear reads passing filter
 **/
 process filter {
-  conda conda_env
-  tag sample_id
+  conda params.conda
+  tag "$sample_id"
 
   input:
     tuple val(sample_id), path(bam), path(bam_index), path(picard_dup_file) 
@@ -164,9 +168,8 @@ process filter {
 Step 6: Convert Filtered Bam to cram file
 **/
 process convert_to_cram {
-  conda conda_env
+  conda params.conda
   publishDir params.outdir
-
   cpus params.threads
 
   input:
@@ -180,7 +183,7 @@ process convert_to_cram {
   """
   samtools view "${bam}" \
     -C -O cram,version=3.0,level=7,lossy_names=0 \
-    -T "${params.genome}.fa}" \
+    -T "${params.genome_fasta_file}" \
     --threads "${task.cpus}" \
     --write-index \
     -o "${cramfile}"
@@ -191,27 +194,8 @@ workflow alignReads {
   take:
     trimmed_reads
   main:
-
-  emit:
-
-
-}
-
-// Workaround, so when we groupTuple later, 
-// it knows how many objects in the group are going to be
-def set_key_for_group_tuple(ch) {
-  channel_1.groupTuple()
-    .map(key, files -> tuple(groupKey(key, files.size()), files))
-    .transpose()
-}
-workflow alignReads {
-  take:
-    trimmed_reads
-  main:
     aligned_files = set_key_for_group_tuple(bam_files) | align_reads
-    groups_to_merge = aligned_files.groupTuple()
-    //FIXME
-    marked_dups_files = merge_bam(groups_to_merge) | mark_duplicates | filter | cram
+    marked_dups_files = merge_bam(aligned_files.groupTuple()) | mark_duplicates | filter | cram
   emit:
     convert_to_cram.out
 }
