@@ -1,14 +1,14 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-
 include { set_key_for_group_tuple } from "./helpers"
 
-params.conda = "$moduleDir/environment.yml"
+//FIXME use docker container
+// TODO check publishDir to be present
 
 process align_reads {
 
   cpus params.threads
-  conda params.conda
+  tag "${group_key}:${align_id}"
   scratch true
 
   input:
@@ -63,9 +63,8 @@ process align_reads {
 
 process filter {
   scratch true
-  conda params.conda
-
   cpus params.threads
+  tag "${group_key}"
 
   input:
     tuple val(group_key), val(align_id), path(bam_file)
@@ -83,7 +82,7 @@ process filter {
     ${params.nuclear_chroms}
   # sort
   samtools sort \
-    -l 0 -m 1G -@ "${task.cpus}" filtered.bam \
+    -l 0 -m 1G -@"${task.cpus}" filtered.bam \
     > ${name}
   """
 }
@@ -91,6 +90,8 @@ process filter {
  * Step 3: Merge alignments into one big ol' file
  */
 process merge_bam {
+  tag "${group_key}"
+
   input:
     tuple val(group_key), path(bamfiles)
 
@@ -131,11 +132,11 @@ process mark_duplicates {
     "INPUT=${merged_bam}" OUTPUT=cigar.bam \
     VALIDATION_STRINGENCY=SILENT RESTORE_ORIGINAL_QUALITIES=false SORT_ORDER=coordinate MAX_RECORDS_TO_EXAMINE=0
   picard "${cmd}" \
-      INPUT=cigar.bam OUTPUT=marked.bam \
+      INPUT=cigar.bam OUTPUT=${name}.bam \
       $extra \
       METRICS_FILE=MarkDuplicates.picard ASSUME_SORTED=true VALIDATION_STRINGENCY=SILENT \
       READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
-  samtools index marked.bam
+  samtools index ${name}
   """
 }
 
@@ -150,7 +151,7 @@ process filter {
     tuple val(sample_id), path(bam), path(bam_index), path(picard_dup_file) 
 
   output:
-    file val(sample_id), path("${name}")
+    file val(sample_id), path("${name}"), path("${name}.bai")
 
   script:
   flag = 512
@@ -161,13 +162,82 @@ process filter {
   cat "${params.nuclear_chroms}" \
   | xargs samtools view -b filtered.bam \
   > ${name}
+  samtools index ${name}
   """
 }
+// Works only with paired end data
+process insert_size {
+  // TODO: Fix chomosome removal!!
+  tag "${sample_id}"
+  publishDir params.outdir
+  scratch true
+
+  input:
+    tuple val(sample_id), path(bam), path(bai), val(is_paired)
+
+  output:
+    tuple val(sample_id), path('CollectInsertSizeMetrics.picard'), emit: plaintext
+    tuple val(sample_id), path('CollectInsertSizeMetrics.picard.pdf'), emit: pdf
+
+  when:
+    is_paired
+
+  script:
+  """
+  samtools idxstats "${bam}" \
+  | cut -f 1 \
+  | grep -v chrM \
+  | grep -v chrC \
+  | xargs samtools view -b "${bam}" -o nuclear.bam
+  picard CollectInsertSizeMetrics \
+    INPUT=nuclear.bam \
+    OUTPUT=CollectInsertSizeMetrics.picard \
+    HISTOGRAM_FILE=CollectInsertSizeMetrics.picard.pdf \
+    VALIDATION_STRINGENCY=LENIENT \
+    ASSUME_SORTED=true
+  """
+}
+
+process density_files {
+  publishDir params.outdir
+  tag "${sample_id}"
+
+  input:
+    tuple val(sample_id), path(bam), path(bai)
+
+  output:
+    tuple val(sample_id), path("${sample_id}.density.bed.starch"), emit: starch
+    tuple val(sample_id), path("${sample_id}.density.bw"), emit: bigwig
+    tuple val(sample_id), path("${sample_id}.density.bed.bgz"), emit: bgzip
+
+
+  script:
+    """
+    bam2bed -d \
+      < "${bam}" \
+      | cut -f1-6 \
+      | awk '{ if( \$6=="+" ){ s=\$2; e=\$2+1 } else { s=\$3-1; e=\$3 } print \$1 "\t" s "\t" e "\tid\t" 1 }' \
+      | sort-bed - \
+      > sample.bed
+    unstarch "${params.density_buckets}" \
+      | bedmap --faster --echo --count --delim "\t" - sample.bed \
+      | awk -v binI=${params.density_step_size} -v win="${params.density_window_width}" \
+          'BEGIN{ halfBin=binI/2; shiftFactor=win-halfBin } { print \$1 "\t" \$2 + shiftFactor "\t" \$3-shiftFactor "\tid\t" i \$4}' \
+      | starch - \
+      > density.bed.starch
+    unstarch density.bed.starch | awk -v binI="${params.density_step_size}" -f "\$STAMPIPES/awk/bedToWig.awk" > density.wig
+    wigToBigWig -clip density.wig "${params.genome_fasta_file}" density.bw
+    unstarch density.bed.starch | bgzip > density.bed.bgz
+    tabix -p bed density.bed.bgz
+    """
+}
+
 
 /**
 Step 6: Convert Filtered Bam to cram file
 **/
 process convert_to_cram {
+  tag "${sample_id}"
   conda params.conda
   publishDir params.outdir
   cpus params.threads
@@ -179,7 +249,7 @@ process convert_to_cram {
   tuple val(sample_id), path(cramfile), path("${cramfile}.crai")
 
   script:
-  cramfile = bam.name.replace("bam", "cram")
+  cramfile = bam.baseName + ".cram"
   """
   samtools view "${bam}" \
     -C -O cram,version=3.0,level=7,lossy_names=0 \
@@ -194,8 +264,17 @@ workflow alignReads {
   take:
     trimmed_reads
   main:
-    aligned_files = set_key_for_group_tuple(bam_files) | align_reads
-    marked_dups_files = merge_bam(aligned_files.groupTuple()) | mark_duplicates | filter | cram
+    // Assuming we don't have single and paired end data for the same sample
+    is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[4])).distinct()
+    aligned_files = set_key_for_group_tuple(trimmed_reads) | align_reads
+    filtered_bam_files = merge_bam(aligned_files.groupTuple()) 
+    | mark_duplicates 
+    | filter
+
+    insert_size(filtered_bam_files.join(is_paired_dict))
+    density_files(filtered_bam_files)
+
+    convert_to_cram(filtered_bam_files)
   emit:
     convert_to_cram.out
 }
