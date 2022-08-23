@@ -281,8 +281,8 @@ workflow alignBwa {
       paired: it[4]
       single: true
     }
-    paired_bam = align_reads_paired(reads_divided.paired)
-    single_bam = align_reads_single(reads_divided.single)
+    paired_bam = align_reads_paired(reads_divided.paired.map(it -> tuple(it[0], it[1], it[2])))
+    single_bam = align_reads_single(reads_divided.single.map(it -> tuple(it[0], it[1])))
     all_bam = paired_bam.mix(single_bam)
   emit:
     all_bam
