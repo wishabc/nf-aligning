@@ -5,60 +5,73 @@ include { set_key_for_group_tuple } from "./helpers"
 //FIXME use docker container
 // TODO check publishDir to be present
 
-process align_reads {
-
+process align_reads_single {
   cpus params.threads
-  tag "${group_key}:${align_id}"
+  tag "${group_key}:${name}"
   scratch true
 
   input:
-    tuple val(group_key), val(align_id), file(trimmed_r1), file(trimmed_r2), val(is_paired)
+    tuple val(group_key), path(trimmed_r1)
 
   output:
-    tuple val(group_key), val(align_id), path(name)
+    tuple val(group_key), path(name)
 
   script:
-  name = "${align_id}.bam"
-  if is_paired
-    """
-    bwa aln \
-      -Y -l 32 -n 0.04 \
-      -t "${task.cpus}" \
-      "${params.genome_fasta_file}" \
-      "${trimmed_r1}" \
-      > out1.sai
+  name = "${trimmed_r1.baseName}.bam"
+  """
+  bwa aln \
+    -Y -l 32 -n 0.04 \
+    -t "${task.cpus}" \
+    "${params.genome_fasta_file}" \
+    "${trimmed_r1}" \
+    > out.sai
 
-    bwa aln \
-      -Y -l 32 -n 0.04 \
-      -t "${task.cpus}" \
-      "${params.genome_fasta_file}" \
-      "${trimmed_r2}" \
-      > out2.sai
-    bwa sampe \
-      -n 10 -a 750 \
-      "${params.genome_fasta_file}" \
-      out1.sai out2.sai \
-      "${trimmed_r1}" "${trimmed_r2}" \
-    | samtools view -b -T ${params.genome_fasta_file} - \
-    > ${name}
-    """
-  else
-    """
-    bwa aln \
-      -Y -l 32 -n 0.04 \
-      -t "${task.cpus}" \
-      "${params.genome_fasta_file}" \
-      "${trimmed_r1}" \
-      > out.sai
+  bwa samse \
+    -n 10 \
+    "${params.genome_fasta_file}" \
+    out.sai \
+    "${trimmed_r1}" \
+  | samtools view -b -T ${params.genome_fasta_file} - \
+  > ${name}
+  """
+}
 
-    bwa samse \
-      -n 10 \
-      "${params.genome_fasta_file}" \
-      out.sai \
-      "${trimmed_r1}" \
-    | samtools view -b -T ${params.genome_fasta_file} - \
-    > ${name}
-    """
+process align_reads_paired {
+
+  cpus params.threads
+  tag "${group_key}:${name}"
+  scratch true
+
+  input:
+    tuple val(group_key), path(trimmed_r1), path(trimmed_r2)
+
+  output:
+    tuple val(group_key), path(name)
+
+  script:
+  name = "${trimmed_r1.baseName}.bam"
+  """
+  bwa aln \
+    -Y -l 32 -n 0.04 \
+    -t "${task.cpus}" \
+    "${params.genome_fasta_file}" \
+    "${trimmed_r1}" \
+    > out1.sai
+
+  bwa aln \
+    -Y -l 32 -n 0.04 \
+    -t "${task.cpus}" \
+    "${params.genome_fasta_file}" \
+    "${trimmed_r2}" \
+    > out2.sai
+  bwa sampe \
+    -n 10 -a 750 \
+    "${params.genome_fasta_file}" \
+    out1.sai out2.sai \
+    "${trimmed_r1}" "${trimmed_r2}" \
+  | samtools view -b -T ${params.genome_fasta_file} - \
+  > ${name}
+  """
 }
 
 process filter {
@@ -67,7 +80,7 @@ process filter {
   tag "${group_key}"
 
   input:
-    tuple val(group_key), val(align_id), path(bam_file)
+    tuple val(group_key), path(bam_file)
 
   output:
     tuple val(group_key), path(name)
@@ -260,17 +273,32 @@ process convert_to_cram {
   """
 }
 
+workflow alignBwa {
+  take:
+    trimmed_reads
+  main:
+    reads_divided = trimmed_reads.branch{
+      paired: it[4]
+      single: true
+    }
+    paired_bam = align_reads_paired(reads_divided.paired)
+    single_bam = align_reads_single(reads_divided.single)
+    all_bam = paired_bam.mix(single_bam)
+  emit:
+    all_bam
+}
+
+
 workflow alignReads {
   take:
     trimmed_reads
   main:
-    // Assuming we don't have single and paired end data for the same sample
-    is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[4])).distinct()
-    aligned_files = set_key_for_group_tuple(trimmed_reads) | align_reads
+    aligned_files = set_key_for_group_tuple(trimmed_reads) | alignBwa
     filtered_bam_files = merge_bam(aligned_files.groupTuple()) 
     | mark_duplicates 
     | filter
 
+    is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[4])).distinct()
     insert_size(filtered_bam_files.join(is_paired_dict))
     density_files(filtered_bam_files)
 
@@ -283,7 +311,6 @@ workflow {
     fastq_trimmed_paired = Channel
       .fromPath(params.samples_file)
       .splitCsv(header:true, sep:'\t')
-		  .map(row -> tuple( row.sample_id, row.align_id, row.reads1, 
-      row.reads2, row.is_paired))
+		  .map(row -> tuple( row.sample_id, row.reads1, row.reads2, row.is_paired))
     alignReads(fastq_trimmed_paired)
 }
