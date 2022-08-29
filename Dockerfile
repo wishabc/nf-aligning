@@ -8,21 +8,15 @@ RUN apt-get install -y \
       wget \
       zlib1g-dev
 
-
+FROM condaforge/mambaforge:latest as conda
+RUN echo 'Building conda'
 ###########
 # miniconda
-FROM build-base
 SHELL ["/bin/bash", "-c"]
-ENV CONDA_DIR /opt/conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-     /bin/bash ~/miniconda.sh -b -p ${CONDA_DIR}
-ENV PATH=$CONDA_DIR/bin:$PATH
 COPY ./environment.yml /scripts/environment.yml
-RUN conda env create -f /scripts/environment.yml
-SHELL ["conda", "run", "-n", "babachi", "/bin/bash", "-c"]
-
+RUN mamba env create -n babachi --file /scripts/environment.yml
 RUN echo 'conda activate babachi' >> ~/.bashrc
-RUN which python
+
 ###########
 # Kentutils
 # FROM build-base as build-kentutils
@@ -54,20 +48,20 @@ RUN which python
 
 #######################
 # Final image for DNase
-FROM ubuntu:18.04 as aligning-dnase
+# FROM ubuntu:18.04 as aligning-dnase
 
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update
-RUN apt-get install -y \
-      bash \
-      build-essential \
-      coreutils \
-      gawk \
-      libboost-dev \
-      libgsl-dev \
-      littler \
-      openjdk-8-jre \
-      zlib1g-dev
+# ENV DEBIAN_FRONTEND=noninteractive
+# RUN apt-get update
+# RUN apt-get install -y \
+#       bash \
+#       build-essential \
+#       coreutils \
+#       gawk \
+#       libboost-dev \
+#       libgsl-dev \
+#       littler \
+#       openjdk-8-jre \
+#       zlib1g-dev
 
 
 
