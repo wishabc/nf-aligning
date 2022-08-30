@@ -87,7 +87,8 @@ workflow trimReads {
 workflow trimReadsFromFile {
     reads_ch = Channel.fromPath(params.samples_file)
         .splitCsv(header:true, sep:'\t')
-		.map(row -> tuple( row.sample_id, row.reads1, row.reads2, row.is_paired))
+		.map(row -> tuple(row.sample_id, row.reads1,
+                            row.reads2, row.is_paired))
     trimReads(reads_ch)
 }
 

@@ -2,8 +2,7 @@
 nextflow.enable.dsl = 2
 include { set_key_for_group_tuple } from "./helpers"
 
-//FIXME use docker container
-// TODO check publishDir to be present
+// TODO check publishDirs
 
 process align_reads_single {
   cpus params.threads
@@ -232,14 +231,17 @@ process density_files {
       | awk '{ if( \$6=="+" ){ s=\$2; e=\$2+1 } else { s=\$3-1; e=\$3 } print \$1 "\t" s "\t" e "\tid\t" 1 }' \
       | sort-bed - \
       > sample.bed
+    
     unstarch "${params.density_buckets}" \
       | bedmap --faster --echo --count --delim "\t" - sample.bed \
       | awk -v binI=${params.density_step_size} -v win="${params.density_window_width}" \
           'BEGIN{ halfBin=binI/2; shiftFactor=win-halfBin } { print \$1 "\t" \$2 + shiftFactor "\t" \$3-shiftFactor "\tid\t" i \$4}' \
       | starch - \
       > density.bed.starch
+      
     unstarch density.bed.starch | awk -v binI="${params.density_step_size}" -f "\$STAMPIPES/awk/bedToWig.awk" > density.wig
     wigToBigWig -clip density.wig "${params.genome_fasta_file}" density.bw
+    
     unstarch density.bed.starch | bgzip > density.bed.bgz
     tabix -p bed density.bed.bgz
     """
@@ -299,9 +301,9 @@ workflow alignReads {
     | filter
 
     is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[4])).distinct()
+    
     insert_size(filtered_bam_files.join(is_paired_dict))
     density_files(filtered_bam_files)
-
     convert_to_cram(filtered_bam_files)
   emit:
     convert_to_cram.out
