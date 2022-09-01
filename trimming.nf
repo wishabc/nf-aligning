@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-def split_fasta_file(file_path):
+def split_fasta_file(file_path) {
     return file(file_path).splitFasta(by: params.chunk_size, file: true)
-
+}
 
 def remove_ambiguous_bases(adapter) {
     x = adapter.takeWhile { it in ['A', 'C', 'T', 'G'] }
