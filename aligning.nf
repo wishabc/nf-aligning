@@ -165,7 +165,7 @@ process mark_duplicates {
 Step 5: Filter down to nuclear reads passing filter
 **/
 process filter {
-  container params.container_name
+  container "${params.container}"
   tag "${sample_id}"
 
   input:
