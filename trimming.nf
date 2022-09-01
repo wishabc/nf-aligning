@@ -60,6 +60,7 @@ workflow trimReads {
     take: // [sample_id, r1, r2, adapter7, adapter5, is_paired]
         data
     main:
+        println('Cutting fasta...')
         fasta_chunks = data.map{ it ->
             tuple(it[0], 
                   split_fasta_file(it[1]),
@@ -80,7 +81,7 @@ workflow trimReadsFromFile {
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.sample_id, row.reads1,
                                 row.reads2, row.adapterP5, 
-                                row.adapterP7, row.is_paired))
+                                row.adapterP7, row.type == 'paired'))
         trimReads(reads_ch)
     emit:
         trimReads.out
