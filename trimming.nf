@@ -30,7 +30,7 @@ process fastp_adapter_trim {
     script:
     simple_name = r1.simpleName
     name1 = "${r1.simpleName}.r1.trimmed.fastq.gz"
-    if is_paired {
+    if (is_paired) {
         name2 = "${r1.simpleName}.r2.trimmed.fastq.gz"
         """
         fastp --in1 "${r1}" \
