@@ -81,7 +81,7 @@ process align_reads_paired {
   """
 }
 
-process filter {
+process filter_and_sort {
   scratch true
   cpus params.threads
   tag "${group_key}"
@@ -304,7 +304,7 @@ workflow alignReads {
   take:
     trimmed_reads
   main:
-    aligned_files = set_key_for_group_tuple(trimmed_reads) | alignBwa
+    aligned_files = set_key_for_group_tuple(trimmed_reads) | alignBwa | filter_and_sort
     filtered_bam_files = merge_bam(aligned_files.groupTuple()) 
     | mark_duplicates 
     | filter
