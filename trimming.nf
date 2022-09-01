@@ -20,7 +20,7 @@ process fastp_adapter_trim {
     scratch true
 
     input:
-        tuple val(sample_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
+        tuple val(sample_id), val(r1), val(r2), val(adapterP7), val(adapterP5), val(is_paired)
 
     output:
         tuple val(sample_id), path(name1), path(name2), val(is_paired)
