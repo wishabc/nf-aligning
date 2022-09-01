@@ -12,5 +12,5 @@ workflow fromFiles {
 // }
 
 workflow {
-    processReadsFromFile()
+    fromFiles()
 }
