@@ -70,10 +70,9 @@ workflow trimReads {
                   it[5]
                 )
         }.transpose()
-        fastp_adapter_trim(fasta_chunks).take(3).view()
+        fastp_adapter_trim(fasta_chunks)
     emit:
-        fasta_chunks
-        // fastp_adapter_trim[0].out
+        fastp_adapter_trim.out
 }
 
 workflow trimReadsFromFile {
