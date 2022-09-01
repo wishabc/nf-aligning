@@ -80,7 +80,7 @@ workflow trimReadsFromFile {
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.sample_id, row.reads1,
                                 row.reads2, row.adapterP5, 
-                                row.adapterP7, row['type']))
+                                row.adapterP7, row.is_paired))
         reads_ch.view()
         trimReads(reads_ch)
     emit:
