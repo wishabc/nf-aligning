@@ -23,9 +23,9 @@ process fastp_adapter_trim {
         tuple val(sample_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
 
     output:
-        tuple val(sample_id), path(name1), path(name2), val(is_paired), emit: fastq
-        tuple val(sample_id), path('fastp.json'), emit: metrics_json
-        tuple val(sample_id), path('fastp.html'), emit: metrics_html
+        tuple val(sample_id), path(name1), path(name2), val(is_paired)
+        tuple val(sample_id), path('fastp.json')
+        tuple val(sample_id), path('fastp.html')
 
     script:
     simple_name = r1.simpleName
@@ -69,9 +69,9 @@ workflow trimReads {
                   it[5]
                 )
             ).transpose()
-        fasta_files = fastp_adapter_trim(fasta_chunks)
+        fasta_files = fastp_adapter_trim(fasta_chunks)[0]
     emit:
-        fasta_files.fastq
+        fasta_files
 }
 
 workflow trimReadsFromFile {

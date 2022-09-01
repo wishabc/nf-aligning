@@ -133,7 +133,6 @@ process merge_bam {
  * Step 4: Mark duplicates with Picard
  */
 process mark_duplicates {
-
   tag "${sample_id}"
   scratch true
   publishDir "${params.outdir}/${sample_id}/stats", pattern: "${metric_name}"
