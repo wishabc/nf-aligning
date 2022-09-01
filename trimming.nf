@@ -82,9 +82,10 @@ workflow trimReadsFromFile {
                                 row.reads2, row.adapterP5, 
                                 row.adapterP7, row.is_paired))
         reads_ch.view()
-        trimReads(reads_ch)
+        //trimReads(reads_ch)
     emit:
-        trimReads.out
+        reads_ch
+        //trimReads.out
 }
 
 workflow {
