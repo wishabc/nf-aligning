@@ -61,7 +61,6 @@ workflow trimReads {
     take: // [sample_id, r1, r2, adapter7, adapter5, is_paired]
         data
     main:
-        data.view()
         fasta_chunks = data.map{ it ->
             tuple(it[0], 
                   split_fasta_file(it[1]),
@@ -71,7 +70,7 @@ workflow trimReads {
                   it[5]
                 )
         }.transpose()
-        // fastp_adapter_trim(fasta_chunks)[0]
+        fastp_adapter_trim(fasta_chunks).take(3).view()
     emit:
         fasta_chunks
         // fastp_adapter_trim[0].out
