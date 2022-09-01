@@ -69,9 +69,9 @@ workflow trimReads {
                   it[5]
                 )
             ).transpose()
-        fasta_files = fastp_adapter_trim(fasta_chunks)[0]
+        fastp_adapter_trim(fasta_chunks)[0]
     emit:
-        fasta_files.out
+        fastp_adapter_trim[0].out
 }
 
 workflow trimReadsFromFile {
