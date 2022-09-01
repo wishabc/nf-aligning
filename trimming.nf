@@ -17,7 +17,7 @@ process fastp_adapter_trim {
     cpus params.threads
     container "${params.container}"
     publishDir "${params.outdir}/${sample_id}/stats/${simple_name}", pattern: "fastp*"
-    scratch true
+    //scratch true
 
     input:
         tuple val(sample_id), val(r1), val(r2), val(adapterP7), val(adapterP5), val(is_paired)
@@ -60,8 +60,6 @@ workflow trimReads {
     take: // [sample_id, r1, r2, adapter7, adapter5, is_paired]
         data
     main:
-        println('Cutting fasta...')
-        data.map( it -> it[5]? 'true': 'false').view()
         fasta_chunks = data.map{ it ->
             tuple(it[0], 
                   split_fasta_file(it[1]),
