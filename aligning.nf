@@ -223,6 +223,7 @@ process insert_size {
 process density_files {
   publishDir "${params.outdir}/${sample_id}"
   tag "${sample_id}"
+  container "${params.container}"
 
   input:
     tuple val(sample_id), path(bam), path(bai)
@@ -262,15 +263,15 @@ Step 6: Convert Filtered Bam to cram file
 **/
 process convert_to_cram {
   tag "${sample_id}"
-  conda params.conda
   publishDir "${params.outdir}/${sample_id}"
   cpus params.threads
+  container "${params.container}"
 
   input:
-  tuple val(sample_id), path(bam), path(bam_index)
+    tuple val(sample_id), path(bam), path(bam_index)
 
   output:
-  tuple val(sample_id), path(cramfile), path("${cramfile}.crai")
+    tuple val(sample_id), path(cramfile), path("${cramfile}.crai")
 
   script:
   cramfile = bam.baseName + ".cram"
