@@ -1,36 +1,20 @@
 # Build base
-FROM ubuntu:18.04 as build-base
+FROM ubuntu:18.04 AS build-base
 RUN apt-get update
 RUN apt-get install -y \
+      bash \
+      rsync \
       build-essential \
       git \
       curl \
       wget \
       zlib1g-dev
 
-
-###########
-# miniconda
-FROM condaforge/mambaforge:latest as conda
-RUN echo 'Building conda'
-SHELL ["/bin/bash", "-c"]
-COPY ./environment.yml /scripts/environment.yml
-RUN mamba env create -n babachi --file /scripts/environment.yml
-RUN echo 'conda activate babachi' >> ~/.bashrc
-
 ###########
 # Kentutils
 FROM build-base as build-kentutils
-RUN apt-get install -y \
-      libmysqlclient-dev \
-      libpng-dev \
-      libssh-dev \
-      wget \
-      zlib1g-dev
-RUN wget --quiet https://github.com/ENCODE-DCC/kentUtils/archive/v302.0.0.tar.gz \
-      && tar xf v302.0.0.tar.gz \
-      && cd kentUtils-302.0.0 \
-      && make
+RUN mkdir /scripts && rsync -azvP rsync://hgdownload.soe.ucsc.edu/genome/admin/exe/linux.x86_64/ /scripts
+
 
 ##########
 # Hotspot2
@@ -46,25 +30,15 @@ RUN git clone https://github.com/Altius/hotspot2.git \
 
 
 #######################
-# Final image for DNase
-FROM ubuntu:18.04 as aligning-dnase
-
+# Final image
+FROM condaforge/mambaforge:latest as aligning-plus-hotspots
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update
-RUN apt-get install -y \
-      bash \
-      build-essential \
-      coreutils \
-      gawk \
-      libboost-dev \
-      libgsl-dev \
-      littler \
-      zlib1g-dev
-
-
-
+SHELL ["/bin/bash", "-c"]
+COPY ./environment.yml /environment.yml
+RUN mamba env create -n babachi --file /environment.yml
+RUN echo 'conda activate babachi' >> ~/.bashrc
 
 COPY --from=build-hotspot2 /hotspot2/bin /usr/local/bin/
 COPY --from=build-hotspot2 /hotspot2/scripts /usr/local/bin/
 COPY --from=build-hotspot2 /modwt/bin /usr/local/bin/
-COPY --from=build-kentutils /kentUtils-302.0.0/bin/ /usr/local/bin/
+COPY --from=build-kentutils /scripts/ /usr/local/bin/

@@ -1,13 +1,20 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-include { set_key_for_group_tuple } from "./helpers"
 
-// TODO check publishDirs
+// Workaround, so when we groupTuple later, 
+// it knows how many objects in the group are going to be
+def set_key_for_group_tuple(ch) {
+  ch.groupTuple()
+    .map(key, files -> tuple(groupKey(key, files.size()), files))
+    .transpose()
+}
+
 
 process align_reads_single {
   cpus params.threads
   tag "${group_key}:${name}"
   scratch true
+  container "${params.container}"
 
   input:
     tuple val(group_key), path(trimmed_r1)
@@ -40,6 +47,7 @@ process align_reads_paired {
   cpus params.threads
   tag "${group_key}:${name}"
   scratch true
+  container "${params.container}"
 
   input:
     tuple val(group_key), path(trimmed_r1), path(trimmed_r2)
@@ -77,6 +85,7 @@ process filter {
   scratch true
   cpus params.threads
   tag "${group_key}"
+  container "${params.container}"
 
   input:
     tuple val(group_key), path(bam_file)
@@ -103,6 +112,8 @@ process filter {
  */
 process merge_bam {
   tag "${group_key}"
+  container "${params.container}"
+  scratch true
 
   input:
     tuple val(group_key), path(bamfiles)
@@ -121,32 +132,30 @@ process merge_bam {
 /*
  * Step 4: Mark duplicates with Picard
  */
-// TODO: single end
 process mark_duplicates {
 
   tag "${sample_id}"
   scratch true
-
-  conda params.conda
+  publishDir "${params.outdir}/${sample_id}/stats", pattern: "${metric_name}"
+  container "${params.container}"
 
   input:
     tuple val(sample_id), path(merged_bam), path(merged_bam_index)
 
   output:
-    tuple val(sample_id), path(name), path("${name}.bai"), path("MarkDuplicates.picard")
+    tuple val(sample_id), path(name), path("${name}.bai"), path(metric_name)
   
   script:
   name = "${sample_id}.marked.bam"
-  cmd = "MarkDuplicatesWithMateCigar"
-  extra = "MINIMUM_DISTANCE=300"
+  metric_name = "${sample_id}.MarkDuplicates.picard"
   """
   picard RevertOriginalBaseQualitiesAndAddMateCigar \
-    "INPUT=${merged_bam}" OUTPUT=cigar.bam \
+    INPUT="${merged_bam}" OUTPUT=cigar.bam \
     VALIDATION_STRINGENCY=SILENT RESTORE_ORIGINAL_QUALITIES=false SORT_ORDER=coordinate MAX_RECORDS_TO_EXAMINE=0
-  picard "${cmd}" \
-      INPUT=cigar.bam OUTPUT=${name}.bam \
-      $extra \
-      METRICS_FILE=MarkDuplicates.picard ASSUME_SORTED=true VALIDATION_STRINGENCY=SILENT \
+  picard MarkDuplicatesWithMateCigar \
+      INPUT=cigar.bam OUTPUT=${name} \
+      MINIMUM_DISTANCE=300 \
+      METRICS_FILE=${metric_name} ASSUME_SORTED=true VALIDATION_STRINGENCY=SILENT \
       READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
   samtools index ${name}
   """
@@ -156,8 +165,8 @@ process mark_duplicates {
 Step 5: Filter down to nuclear reads passing filter
 **/
 process filter {
-  conda params.conda
-  tag "$sample_id"
+  container params.container_name
+  tag "${sample_id}"
 
   input:
     tuple val(sample_id), path(bam), path(bam_index), path(picard_dup_file) 
@@ -166,35 +175,36 @@ process filter {
     file val(sample_id), path("${name}"), path("${name}.bai")
 
   script:
-  flag = 512
   name = "${sample_id}.filtered.bam"
   """
-  samtools view -b -F "${flag}" ${bam} > filtered.bam
+  samtools view -b -F 512 ${bam} > filtered.bam
   samtools index filtered.bam
   cat "${params.nuclear_chroms}" \
-  | xargs samtools view -b filtered.bam \
-  > ${name}
+  | xargs samtools view -b filtered.bam > ${name}
+
   samtools index ${name}
   """
 }
 // Works only with paired end data
 process insert_size {
-  // TODO: Fix chomosome removal!!
   tag "${sample_id}"
-  publishDir params.outdir
+  publishDir "${params.outdir}"
   scratch true
+  container "${params.container}"
+  publishDir "${params.outdir}/${sample_id}/stats"
 
   input:
     tuple val(sample_id), path(bam), path(bai), val(is_paired)
 
   output:
-    tuple val(sample_id), path('CollectInsertSizeMetrics.picard'), emit: plaintext
-    tuple val(sample_id), path('CollectInsertSizeMetrics.picard.pdf'), emit: pdf
+    tuple val(sample_id), path(stats_name), path(pdf_name)
 
   when:
     is_paired
 
   script:
+  stats_name = "${sample_id}.CollectInsertSizeMetrics.picard"
+  pdf_name = "${stats_name}.pdf"
   """
   samtools idxstats "${bam}" \
   | cut -f 1 \
@@ -203,15 +213,15 @@ process insert_size {
   | xargs samtools view -b "${bam}" -o nuclear.bam
   picard CollectInsertSizeMetrics \
     INPUT=nuclear.bam \
-    OUTPUT=CollectInsertSizeMetrics.picard \
-    HISTOGRAM_FILE=CollectInsertSizeMetrics.picard.pdf \
+    OUTPUT=${stats_name} \
+    HISTOGRAM_FILE=${pdf_name} \
     VALIDATION_STRINGENCY=LENIENT \
     ASSUME_SORTED=true
   """
 }
 
 process density_files {
-  publishDir params.outdir
+  publishDir "${params.outdir}/${sample_id}"
   tag "${sample_id}"
 
   input:
@@ -221,7 +231,6 @@ process density_files {
     tuple val(sample_id), path("${sample_id}.density.bed.starch"), emit: starch
     tuple val(sample_id), path("${sample_id}.density.bw"), emit: bigwig
     tuple val(sample_id), path("${sample_id}.density.bed.bgz"), emit: bgzip
-
 
   script:
     """
@@ -239,7 +248,7 @@ process density_files {
       | starch - \
       > density.bed.starch
       
-    unstarch density.bed.starch | awk -v binI="${params.density_step_size}" -f "\$STAMPIPES/awk/bedToWig.awk" > density.wig
+    unstarch density.bed.starch | awk -v binI="${params.density_step_size}" -f "${moduleDir}/awk/bedToWig.awk" > density.wig
     wigToBigWig -clip density.wig "${params.genome_fasta_file}" density.bw
     
     unstarch density.bed.starch | bgzip > density.bed.bgz
@@ -254,7 +263,7 @@ Step 6: Convert Filtered Bam to cram file
 process convert_to_cram {
   tag "${sample_id}"
   conda params.conda
-  publishDir params.outdir
+  publishDir "${params.outdir}/${sample_id}"
   cpus params.threads
 
   input:

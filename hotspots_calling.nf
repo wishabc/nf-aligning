@@ -3,27 +3,25 @@ nextflow.enable.dsl = 2
 
 process call_hotspots {
 	tag "${id}"
-	publishDir "${params.outdir}/hotspots"
-
-    container "fwip/hotspot2:latest" // FIXME, add info to nextflow.config
-
+	publishDir "${params.outdir}/${id}"
+    container "${params.container}"
 	scratch true
 
 	input:
 	    tuple val(id), val(bam_file)
 
 	output:
-	    tuple val(id), val(bam_file), path(name)
+	    tuple val(id), path(name)
 	    tuple val(id), path("${id}.hotspots.fdr005.starch"), path("${id}.hotspots.fdr001.starch")
 
 	script:
     name = "${id}.varw_peaks.fdr0.001.starch"
 	"""
 	samtools view -H ${bam_file} > header.txt
-	cat ${nuclear_chroms} \
-	| xargs samtools view -b ${bam_file} \
-	| samtools reheader header.txt - \
-	> nuclear.bam
+	cat ${params.nuclear_chroms} \
+		| xargs samtools view -b ${bam_file} \
+		| samtools reheader header.txt - \
+		> nuclear.bam
 
 	hotspot2.sh -F 0.05 -f 0.05 -p varWidth_20_${id} \
 		-M ${params.mappable} \

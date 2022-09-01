@@ -1,20 +1,19 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-include { set_key_for_group_tuple } from "./helpers"
 
 def split_fasta_file(file_path):
-    file(file_path).splitFasta(by: params.chunk_size, file: true)
+    return file(file_path).splitFasta(by: params.chunk_size, file: true)
 
 
 def remove_ambiguous_bases(adapter) {
-    def x = adapter.takeWhile { it in ['A', 'C', 'T', 'G'] }
+    x = adapter.takeWhile { it in ['A', 'C', 'T', 'G'] }
     if (x != adapter) {
         println("WARN: Adapter '${adapter}' contains ambiguous bases, using '${x}' instead")
     }
     return x
 }
 
-
+// DEFUNC?
 def parse_legacy_adapter_file(adapter_file) {
   // returns two values, p7 and p5
   adapters = [:]
@@ -26,25 +25,26 @@ def parse_legacy_adapter_file(adapter_file) {
 }
 
 process fastp_adapter_trim {
-
-    cpus 3
+    cpus params.threads
+    container "${params.container}"
+    publishDir "${params.outdir}/${sample_id}/stats/${simple_name}", pattern: "fastp*"
+    scratch: true
 
     input:
-        tuple val(sample_id), path(r1), path(r2), val(is_paired)
-        tuple val(adapterP7), val(adapterP5)
+        tuple val(sample_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
 
     output:
         tuple val(sample_id), path(name1), path(name2), val(is_paired), emit: fastq
-        tuple val(meta), path('fastp.json'), emit: metrics_json
-        tuple val(meta), path('fastp.html'), emit: metrics_html
+        tuple val(sample_id), path('fastp.json'), emit: metrics_json
+        tuple val(sample_id), path('fastp.html'), emit: metrics_html
 
     script:
-    name1 = 'out.r1.fastq.gz'
-    if is_paired
-        name2 = 'out.r2.fastq.gz'
+    simple_name = r1.simpleName
+    name1 = "${r1.simpleName}.r1.trimmed.fastq.gz"
+    if is_paired {
+        name2 = "${r1.simpleName}.r2.trimmed.fastq.gz"
         """
-        fastp \
-            --in1 "${r1}" \
+        fastp --in1 "${r1}" \
             --in2 "${r2}" \
             --adapter_sequence    "${adapterP7}" \
             --adapter_sequence_r2 "${adapterP5}" \
@@ -54,41 +54,42 @@ process fastp_adapter_trim {
             --disable_length_filtering \
             --thread ${task.cpus}
         """
-    else
+    } else {
         name2 = './'
         """
-        fastp \
-        -i "${r1}" \
-        --adapter_sequence "${adapterP7}" \
-        -o ${name} \
-        --disable_quality_filtering \
-        --disable_length_filtering \
-        --thread ${task.cpus}
+        fastp -i "${r1}" \
+            --adapter_sequence "${adapterP7}" \
+            -o ${name1} \
+            --disable_quality_filtering \
+            --disable_length_filtering \
+            --thread ${task.cpus}
         """
+    }
 }
 
 workflow trimReads {
-    take: // [sample_id, r1, r2, is_paired]
+    take: // [sample_id, r1, r2, adapter7, adapter5, is_paired]
         data
     main:
         fasta_chunks = data.map(it ->
             tuple(it[0], 
                   split_fasta_file(it[1]),
-                  it[3] ? split_fasta_file(it[2]) : './',
-                  it[3]
+                  it[5] ? split_fasta_file(it[2]) : './',
+                   remove_ambiguous_bases(it[3]),
+                   it[5] ? remove_ambiguous_bases(it[4]) : it[4],
+                  it[5]
                 )
             ).transpose()
-        legacy_adapters = parse_legacy_adapter_file(params.adapter_file)
-        fasta_files = fastp_adapter_trim(fasta_chunks, legacy_adapters)
+        fasta_files = fastp_adapter_trim(fasta_chunks)
     emit:
-        fasta_files
+        fasta_files.fastq
 }
 
 workflow trimReadsFromFile {
     reads_ch = Channel.fromPath(params.samples_file)
         .splitCsv(header:true, sep:'\t')
 		.map(row -> tuple(row.sample_id, row.reads1,
-                            row.reads2, row.is_paired))
+                            row.reads2, row.adapters_file, row.is_paired))
     trimReads(reads_ch)
 }
 
