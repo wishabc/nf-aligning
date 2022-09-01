@@ -2,7 +2,6 @@
 nextflow.enable.dsl = 2
 
 def split_fasta_file(file_path) {
-    println(file_path)
     return file(file_path).splitFasta(by: params.chunk_size, file: true)
 }
 
