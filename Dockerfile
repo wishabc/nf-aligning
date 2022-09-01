@@ -1,14 +1,9 @@
 # Build base
-FROM ubuntu:18.04 AS build-base
-RUN apt-get update
-RUN apt-get install -y \
+FROM condaforge/mambaforge:latest AS build-base
+RUN apt-get update && apt-get install -y \
       bash \
       rsync \
-      build-essential \
-      git \
-      curl \
-      wget \
-      zlib1g-dev
+      build-essential
 
 ###########
 # Kentutils
@@ -35,8 +30,7 @@ FROM condaforge/mambaforge:latest as aligning-plus-hotspots
 ENV DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-c"]
 COPY ./environment.yml /environment.yml
-RUN mamba env create -n babachi --file /environment.yml
-RUN echo 'conda activate babachi' >> ~/.bashrc
+RUN mamba env create -n babachi --file /environment.yml && echo 'conda activate babachi' >> ~/.bashrc
 
 COPY --from=build-hotspot2 /hotspot2/bin /usr/local/bin/
 COPY --from=build-hotspot2 /hotspot2/scripts /usr/local/bin/

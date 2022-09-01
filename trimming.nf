@@ -13,17 +13,6 @@ def remove_ambiguous_bases(adapter) {
     return x
 }
 
-// DEFUNC?
-def parse_legacy_adapter_file(adapter_file) {
-  // returns two values, p7 and p5
-  adapters = [:]
-  adapter_file.readLines().each {
-    columns = it.split()
-    adapters[columns[0]] = remove_ambiguous_bases(columns[1])
-  }
-  return [adapters.P7, adapters.P5]
-}
-
 process fastp_adapter_trim {
     cpus params.threads
     container "${params.container}"
@@ -89,7 +78,7 @@ workflow trimReadsFromFile {
     reads_ch = Channel.fromPath(params.samples_file)
         .splitCsv(header:true, sep:'\t')
 		.map(row -> tuple(row.sample_id, row.reads1,
-                            row.reads2, row.adapters_file, row.is_paired))
+                            row.reads2, row.adapterP5, row.adapterP7, row.type == 'paired'))
     trimReads(reads_ch)
 }
 
