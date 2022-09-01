@@ -25,8 +25,8 @@ process fastp_adapter_trim {
 
     output:
         tuple val(sample_id), path(name1), path(name2), val(is_paired)
-        tuple val(sample_id), path('fastp.json')
-        tuple val(sample_id), path('fastp.html')
+        //tuple val(sample_id), path('fastp.json')
+        //tuple val(sample_id), path('fastp.html')
 
     script:
     simple_name = r1.simpleName
