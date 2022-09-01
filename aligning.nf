@@ -172,7 +172,7 @@ process filter {
     tuple val(sample_id), path(bam), path(bam_index), path(picard_dup_file) 
 
   output:
-    file val(sample_id), path("${name}"), path("${name}.bai")
+    tuple val(sample_id), path("${name}"), path("${name}.bai")
 
   script:
   name = "${sample_id}.filtered.bam"
