@@ -2,6 +2,7 @@
 nextflow.enable.dsl = 2
 
 def split_fasta_file(file_path) {
+    println(file_path)
     return file(file_path).splitFasta(by: params.chunk_size, file: true)
 }
 
@@ -60,7 +61,7 @@ workflow trimReads {
     take: // [sample_id, r1, r2, adapter7, adapter5, is_paired]
         data
     main:
-        fasta_chunks = data.map(it ->
+        fasta_chunks = data.map{ it ->
             tuple(it[0], 
                   split_fasta_file(it[1]),
                   it[5] ? split_fasta_file(it[2]) : './',
@@ -68,7 +69,7 @@ workflow trimReads {
                    it[5] ? remove_ambiguous_bases(it[4]) : it[4],
                   it[5]
                 )
-            ).transpose()
+        }.transpose()
         fastp_adapter_trim(fasta_chunks)[0]
     emit:
         fastp_adapter_trim[0].out
