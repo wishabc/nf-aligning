@@ -61,6 +61,7 @@ workflow trimReads {
         data
     main:
         println('Cutting fasta...')
+        data.map( it -> it[5]? 'true': 'false').view()
         fasta_chunks = data.map{ it ->
             tuple(it[0], 
                   split_fasta_file(it[1]),
