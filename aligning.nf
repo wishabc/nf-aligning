@@ -91,7 +91,6 @@ process filter_and_sort {
 
   input:
     tuple val(group_key), path(bam_file)
-    path("${fasta_file}*")
 
   output:
     tuple val(group_key), path(name)
