@@ -6,7 +6,7 @@ nextflow.enable.dsl = 2
 def set_key_for_group_tuple(ch) {
   s = ch.groupTuple()
   s.view()
-  s.map( key, files -> tuple(groupKey(key, files.size()), files) )
+  s.map{ key, files -> tuple(groupKey(key, files.size()), files) }
     .transpose()
 }
 
