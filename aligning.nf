@@ -7,8 +7,10 @@ def set_key_for_group_tuple(ch) {
   s = ch.groupTuple()
   s.map(it -> groupKey(it[0], it[1].size())).view()
   a = s.map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
-  a.view()
-  a.transpose()
+  
+  b = a.transpose()
+  b.view()
+  return b
 }
 
 
