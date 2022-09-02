@@ -111,7 +111,7 @@ workflow trimReads {
         //           it[5]
         //         )
         // }.transpose()
-        fastp_adapter_trim(split_single.mix(split_paired))
+        fastp_adapter_trim(split_single) //.split_paired
     emit:
         fastp_adapter_trim.out
 }
