@@ -11,7 +11,7 @@ process call_hotspots {
 	scratch true
 
 	input:
-	    tuple val(id), path(bam_file)
+	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
 	    tuple val(id), path(name), path("${id}.hotspots.fdr005.starch"), path("${id}.hotspots.fdr001.starch")
@@ -65,6 +65,6 @@ workflow {
 	metadata = Channel
       .fromPath(params.samples_file)
       .splitCsv(header:true, sep:'\t')
-		  .map(row -> tuple( row.ag_id, row.bam_file))
+		  .map(row -> tuple( row.ag_id, row.bam_file, "${row.bam_file}.{crai,bai}"))
 	callHotspots(metadata)
 }

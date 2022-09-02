@@ -7,7 +7,7 @@ workflow alignFromFiles {
     trimReadsFromFile() | alignReads | callHotspots
 }
 
-// workflow fromSRA {
+// workflow alignFromSRA {
 //     downloadFiles | alignFromFiles
 // }
 
