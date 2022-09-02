@@ -81,9 +81,6 @@ process fastp_adapter_trim {
             --disable_quality_filtering \
             --disable_length_filtering \
             --thread ${task.cpus}
-        
-        mv fastp.html ${align_id}.fastp.html
-        mv fastp.json ${align_id}.fastp.json
         """
     } else {
         name2 = './'
@@ -94,9 +91,6 @@ process fastp_adapter_trim {
             --disable_quality_filtering \
             --disable_length_filtering \
             --thread ${task.cpus}
-        
-        mv fastp.html ${align_id}.fastp.html
-        mv fastp.json ${align_id}.fastp.json
         """
     }
 }
@@ -123,7 +117,7 @@ workflow trimReads {
         ).map(
             it -> tuple(it[0], it[1].sort(), it[2].sort())
         ).join(
-            fasta_chunks.paired.map(it -> tuple(it[0],
+                fasta_chunks.paired.map(it -> tuple(it[0],
                 remove_ambiguous_bases(it[4]), 
                 remove_ambiguous_bases(it[5]), 
                 it[6])
