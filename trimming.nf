@@ -85,12 +85,8 @@ workflow trimReads {
             by: params.chunk_size, 
             file: true,
             compress: true
-        ).join(
-            fasta_chunks.single.map(it -> tuple(it[0], file('./'),
-            remove_ambiguous_bases(it[3]),
-            it[4], 
-            it[5]))
-        ).transpose()
+        )
+        split_single.view()
 
         // split_paired = fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2])).splitFastq(
         //     by: params.chunk_size, 
