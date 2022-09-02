@@ -12,7 +12,6 @@ def remove_ambiguous_bases(adapter) {
 
 process split_fasta_file {
     container "${params.container}"
-
     input:
         tuple val(sample_id), path(fastq)
     output:
@@ -31,6 +30,8 @@ process split_fasta_file {
 
 process fastp_adapter_trim {
     cpus params.threads
+    stageInMode 'copy'
+    scratch true
     container "${params.container}"
     publishDir "${params.outdir}/${sample_id}/stats/${simple_name}", pattern: "fastp*"
     //scratch true
