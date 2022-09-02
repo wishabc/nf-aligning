@@ -1,10 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-def split_fasta_file(file_path) {
-    chunks = Channel.fromPath(file_path).splitFasta(by: params.chunk_size, file: true)
-    return chunks.toSortedList()
-}
 
 def remove_ambiguous_bases(adapter) {
     x = adapter.takeWhile { it in ['A', 'C', 'T', 'G'] }
@@ -12,6 +8,25 @@ def remove_ambiguous_bases(adapter) {
         println("WARN: Adapter '${adapter}' contains ambiguous bases, using '${x}' instead")
     }
     return x
+}
+
+process split_fasta_file {
+    container "${params.container}"
+
+    input:
+        tuple val(sample_id), val(fastq)
+    output:
+        tuple val(sample_id), path("out/${name_prefix}*")
+    script:
+    name_prefix = r1.baseName
+    """
+    mkdir out
+    zcat "${fastq}" \
+    | split -l "${fastq_line_count}" \
+      --filter='gzip -1 > out/\$FILE.gz' \
+      - "${name_prefix}"
+    """
+
 }
 
 process fastp_adapter_trim {
@@ -61,16 +76,22 @@ workflow trimReads {
     take: // [sample_id, r1, r2, adapter7, adapter5, is_paired]
         data
     main:
-        fasta_chunks = data.map{ it ->
-            tuple(it[0], 
-                  split_fasta_file(it[1]),
-                  it[5] ? split_fasta_file(it[2]) : './',
-                   remove_ambiguous_bases(it[3]),
-                   it[5] ? remove_ambiguous_bases(it[4]) : it[4],
-                  it[5]
-                )
-        }.transpose()
-        fastp_adapter_trim(fasta_chunks)
+        fasta_chunks = data.branch{ paired: it[5], single: true }
+        split_single = split_fasta_file(
+            fasta_chunks.single.map(it -> tuple(it[0], it[1]))
+        ).join(
+            fasta_chunks.single.map(it -> tuple(it[0],
+             remove_ambiguous_bases(it[3]), it[4], it[5]))
+        )
+        //     tuple(it[0], 
+        //           split_fasta_file(it[1]),
+        //           it[5] ? split_fasta_file(it[2]) : './',
+        //            remove_ambiguous_bases(it[3]),
+        //            it[5] ? remove_ambiguous_bases(it[4]) : it[4],
+        //           it[5]
+        //         )
+        // }.transpose()
+        fastp_adapter_trim(split_single)
     emit:
         fastp_adapter_trim.out
 }
