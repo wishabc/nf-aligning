@@ -3,14 +3,14 @@ include { alignReads } from "./aligning"
 include { callHotspots } from "./hotspots_calling"
 include { trimReadsFromFile } from "./trimming"
 
-workflow fromFiles {
+workflow alignFromFiles {
     trimReadsFromFile() | alignReads | callHotspots
 }
 
 // workflow fromSRA {
-//     downloadFiles | processReadsFromFiles
+//     downloadFiles | alignFromFiles
 // }
 
 workflow {
-    fromFiles()
+    alignFromFiles()
 }

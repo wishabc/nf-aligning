@@ -299,8 +299,9 @@ workflow alignBwa {
   take:
     trimmed_reads
   main:
+    trimmed_reads.view()
     reads_divided = trimmed_reads.branch{
-      paired: it[4]
+      paired: it[3]
       single: true
     }
     paired_bam = align_reads_paired(reads_divided.paired.map(it -> tuple(it[0], it[1], it[2])))
@@ -315,12 +316,12 @@ workflow alignReads {
   take:
     trimmed_reads
   main:
-    aligned_files = trimmed_reads | alignBwa | filter_and_sort
+    aligned_files = alignBwa(trimmed_reads) | filter_and_sort
     filtered_bam_files = merge_bam(aligned_files.groupTuple()) 
     | mark_duplicates 
     | filter
 
-    is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[4])).distinct()
+    is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[3])).distinct()
     
     insert_size(filtered_bam_files.join(is_paired_dict))
     density_files(filtered_bam_files)
