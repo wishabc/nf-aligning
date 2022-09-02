@@ -11,7 +11,10 @@ def set_key_for_group_tuple(ch) {
 
 genome_fasta_file = file(params.genome_fasta_file)
 containerOption = "-v ${genome_fasta_file.parent}:${genome_fasta_file.parent}"
-
+def get_nuclear_chroms_container() {
+  nuclear_chroms = file(params.nuclear_chroms)
+  nuclearChromsContainer = "-v ${nuclear_chroms.parent}:${nuclear_chroms.parent}"
+}
 nuclear_chroms = file(params.nuclear_chroms)
 nuclearChromsContainer = "-v ${nuclear_chroms.parent}:${nuclear_chroms.parent}"
 
