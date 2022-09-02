@@ -3,7 +3,6 @@ nextflow.enable.dsl = 2
 
 def split_fasta_file(file_path) {
     chunks = Channel.fromPath(file_path).splitFasta(by: params.chunk_size, file: true)
-    chunks.view()
     return chunks
 }
 
@@ -30,7 +29,8 @@ process fastp_adapter_trim {
         //tuple val(sample_id), path('fastp.html')
 
     script:
-    simple_name = r1.simpleName
+    println(r1)
+    simple_name = '123'
     name1 = "${r1.simpleName}.r1.trimmed.fastq.gz"
     if (is_paired) {
         name2 = "${r1.simpleName}.r2.trimmed.fastq.gz"
