@@ -100,7 +100,7 @@ process filter_and_sort {
     tuple val(group_key), path(name)
   
   script:
-  name = "${align_id}.sorted.bam"
+  name = "${bam_file.baseName}.sorted.bam"
   """
   # filter
   python3 $projectDir/bin/filter_reads.py \
