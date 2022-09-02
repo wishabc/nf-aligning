@@ -84,7 +84,7 @@ workflow trimReads {
         split_single = split_fasta_file(
             fasta_chunks.single.map(it -> tuple(it[0], it[1]))
         ).join(
-            fasta_chunks.single.map(it -> tuple(it[0], './',
+            fasta_chunks.single.map(it -> tuple(it[0], file('./'),
              remove_ambiguous_bases(it[3]), it[4], it[5]))
         ).transpose()
         split_single.view()
