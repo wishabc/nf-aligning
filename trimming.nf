@@ -112,7 +112,7 @@ workflow trimReads {
             it[4], 
             it[5]))
         ).transpose()
-        par = split_fasta_paired(
+        split_paired = split_fasta_paired(
             fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2]))
         ).map(it -> tuple(it[0], it[1].sort(), it[2].sort())).join(
             fasta_chunks.paired.map(it -> tuple(it[0],
