@@ -176,6 +176,7 @@ Step 5: Filter down to nuclear reads passing filter
 **/
 process filter {
   container "${params.container}"
+  containerOptions nuclearChromsContainer
   tag "${sample_id}"
 
   input:
@@ -299,7 +300,6 @@ workflow alignBwa {
   take:
     trimmed_reads
   main:
-    trimmed_reads.view()
     reads_divided = trimmed_reads.branch{
       paired: it[3]
       single: true
