@@ -81,7 +81,7 @@ workflow trimReads {
             single: true 
         }
         split_single = fasta_chunks.single.map(
-            it -> tuple(it[0], it[1])).splitFastq(
+            it -> it[1]).splitFastq(
             by: params.chunk_size, 
             file: true,
             compress: true
