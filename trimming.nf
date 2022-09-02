@@ -11,7 +11,7 @@ def remove_ambiguous_bases(adapter) {
 }
 
 process split_fasta_file {
-    container "${params.container}"
+    container "${params.container}", fixOwnership: true
 
     input:
         tuple val(sample_id), path(fastq)
@@ -23,7 +23,7 @@ process split_fasta_file {
     mkdir out
     zcat "${fastq}" \
     | split -l "${params.chunk_size}" \
-      --filter='gzip -1 > out/\$FILE.gz' \
+      --filter='gzip -1 > out/\$FILE.fastq.gz' \
       - "${name_prefix}"
     """
 
