@@ -25,7 +25,7 @@ process align_reads_single {
 
   script:
   name = "${trimmed_r1.baseName}.bam"
-  bwa_index = "${genome_fasta_file.getParent}/${genome_fasta_file.baseName}"
+  bwa_index = "${genome_fasta_file.parent}/${genome_fasta_file.baseName}"
   """
   bwa aln \
     -Y -l 32 -n 0.04 \
@@ -59,7 +59,7 @@ process align_reads_paired {
 
   script:
   name = "${trimmed_r1.baseName}.bam"
-  bwa_index = "${genome_fasta_file.getParent}/${genome_fasta_file.baseName}"
+  bwa_index = "${genome_fasta_file.parent}/${genome_fasta_file.baseName}"
   """
   bwa aln \
     -Y -l 32 -n 0.04 \
