@@ -72,6 +72,15 @@ process fastp_adapter_trim {
     }
 }
 
+workflow splitFasta {
+    take:
+        data
+    main:
+        split_fasta_file(data)
+    emit:
+        split_fasta_file.out
+}
+
 workflow trimReads {
     take: // [sample_id, r1, r2, adapter7, adapter5, is_paired]
         data
@@ -80,7 +89,7 @@ workflow trimReads {
             paired: it[5]
             single: true 
         }
-        split_single = split_fasta_file(
+        split_single = splitFasta(
             fasta_chunks.single.map(it -> tuple(it[0], it[1]))
         ).join(
             fasta_chunks.single.map(it -> tuple(it[0], file('./'),
@@ -89,7 +98,7 @@ workflow trimReads {
             it[5]))
         ).transpose()
 
-        split_paired = split_fasta_file(
+        split_paired = splitFasta(
             fasta_chunks.paired.flatMap{ it -> [tuple(it[0], it[1]), 
                                                 tuple(it[0], it[2])] }
                                                 .collate(2)
