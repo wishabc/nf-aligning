@@ -38,11 +38,11 @@ process split_fasta_single {
     container "${params.container}"
     scratch true
     input:
-        tuple val(sample_id), path(fastq)
+        tuple val(sample_id), val(align_id), path(fastq)
     output:
         tuple val(sample_id), path("out/${name_prefix}*")
     script:
-    name_prefix = "${fastq.baseName}."
+    name_prefix = "${align_id}."
     """
     mkdir out
     zcat "${fastq}" \
@@ -57,20 +57,20 @@ process fastp_adapter_trim {
     cpus params.threads
     scratch true
     container "${params.container}"
-    publishDir "${params.outdir}/${sample_id}/stats/", pattern: "${align_id}.fastp.*"
+    publishDir "${params.outdir}/${sample_id}/stats/"
 
     input:
-        tuple val(sample_id), val(align_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
+        tuple val(sample_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
 
     output:
         tuple val(sample_id), path(name1), path(name2), val(is_paired), emit: fastq
-        tuple val(sample_id), path('fastp.json'), emit: json
-        tuple val(sample_id), path('fastp.html'), emit: html
+        // tuple val(sample_id), path('fastp.json'), emit: json
+        // tuple val(sample_id), path('fastp.html'), emit: html
 
     script:
-    name1 = "${align_id}.r1.trimmed.fastq.gz"
+    name1 = "${r1.baseName}.trimmed.fastq.gz"
     if (is_paired) {
-        name2 = "${align_id}.r2.trimmed.fastq.gz"
+        name2 = "${r2.baseName}.trimmed.fastq.gz"
         """
         fastp --in1 "${r1}" \
             --in2 "${r2}" \
@@ -112,7 +112,7 @@ workflow trimReads {
         split_single = split_fasta_single(
             fasta_chunks.single.map(it -> tuple(it[0], it[1], it[2]))
         ).join(
-            fasta_chunks.single.map(it -> tuple(it[0], file('./'),
+            fasta_chunks.single.map(it -> tuple(it[0], it[1], file('./'),
             remove_ambiguous_bases(it[3]),
             it[4], 
             it[5],
@@ -126,6 +126,7 @@ workflow trimReads {
             remove_ambiguous_bases(it[4]), 
             it[5]))
         ).transpose()
+
         trimmed = fastp_adapter_trim(split_single.mix(split_paired)).fastq
     emit:
         trimmed
