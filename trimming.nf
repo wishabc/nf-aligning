@@ -3,7 +3,7 @@ nextflow.enable.dsl = 2
 
 def split_fasta_file(file_path) {
     chunks = Channel.fromPath(file_path).splitFasta(by: params.chunk_size, file: true)
-    return chunks
+    return chunks.toList()
 }
 
 def remove_ambiguous_bases(adapter) {
@@ -29,8 +29,7 @@ process fastp_adapter_trim {
         //tuple val(sample_id), path('fastp.html')
 
     script:
-    println(r1)
-    simple_name = '123'
+    simple_name = r1.simpleName
     name1 = "${r1.simpleName}.r1.trimmed.fastq.gz"
     if (is_paired) {
         name2 = "${r1.simpleName}.r2.trimmed.fastq.gz"
