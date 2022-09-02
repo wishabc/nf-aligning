@@ -14,7 +14,7 @@ process split_fasta_file {
     container "${params.container}"
 
     input:
-        tuple val(sample_id), val(fastq)
+        tuple val(sample_id), path(fastq)
     output:
         tuple val(sample_id), path("out/${name_prefix}*")
     script:
