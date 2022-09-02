@@ -12,6 +12,10 @@ def set_key_for_group_tuple(ch) {
 genome_fasta_file = file(params.genome_fasta_file)
 containerOption = "-v ${genome_fasta_file.parent}:${genome_fasta_file.parent}"
 
+nuclear_chroms = file(params.nuclear_chroms)
+nuclearChromsContainer = "-v ${nuclear_chroms.parent}:${nuclear_chroms.parent}"
+
+
 process align_reads_single {
   cpus params.threads
   tag "${group_key}:${name}"
@@ -92,7 +96,8 @@ process filter_and_sort {
   cpus params.threads
   tag "${group_key}"
   container "${params.container}"
-
+  containerOptions nuclearChromsContainer
+  
   input:
     tuple val(group_key), path(bam_file)
 
@@ -106,7 +111,7 @@ process filter_and_sort {
   python3 $projectDir/bin/filter_reads.py \
     ${bam_file} \
     filtered.bam \
-    ${params.nuclear_chroms}
+    ${nuclear_chroms}
   # sort
   samtools sort \
     -l 0 -m 1G -@"${task.cpus}" filtered.bam \
