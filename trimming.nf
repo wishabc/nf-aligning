@@ -19,7 +19,7 @@ process split_fasta_paired {
         tuple val(sample_id), path("out/{${name_prefix1},${name_prefix2}}*.fastq.gz")
     script:
     name_prefix1 = "${fastq1.baseName}."
-    name_prefix1 = "${fastq2.baseName}."
+    name_prefix2 = "${fastq2.baseName}."
     """
     mkdir out
     zcat "${fastq1}" \
