@@ -15,6 +15,7 @@ containerOption = "-v ${genome_fasta_file.parent}:${genome_fasta_file.parent}"
 nuclear_chroms = file(params.nuclear_chroms)
 nuclearChromsContainer = "-v ${nuclear_chroms.parent}:${nuclear_chroms.parent}"
 
+params.density_buckets = "${moduleDir}/data/chrom-buckets.bed.starch"
 
 process align_reads_single {
   cpus params.threads
@@ -277,6 +278,7 @@ process convert_to_cram {
   publishDir "${params.outdir}/${sample_id}"
   cpus params.threads
   container "${params.container}"
+  containerOptions containerOption
 
   input:
     tuple val(sample_id), path(bam), path(bam_index)
