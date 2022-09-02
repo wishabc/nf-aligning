@@ -9,14 +9,13 @@ def set_key_for_group_tuple(ch) {
   .transpose()
 }
 
-genome_fasta_file = file(params.genome_fasta_file)
-containerOption = "-v ${genome_fasta_file.parent}:${genome_fasta_file.parent}"
-def get_nuclear_chroms_container() {
-  nuclear_chroms = file(params.nuclear_chroms)
-  nuclearChromsContainer = "-v ${nuclear_chroms.parent}:${nuclear_chroms.parent}"
+def get_container(file_name) {
+  parent = file(file_name).parent
+  nuclearChromsContainer = "-v ${parent}:${parent}"
 }
-nuclear_chroms = file(params.nuclear_chroms)
-nuclearChromsContainer = "-v ${nuclear_chroms.parent}:${nuclear_chroms.parent}"
+
+fastaContainer = get_container(params.genome_fasta_file)
+nuclearChromsContainer = get_container(params.nuclear_chroms)
 
 params.density_buckets = "${moduleDir}/data/chrom-buckets.bed.starch"
 
@@ -25,7 +24,7 @@ process align_reads_single {
   tag "${group_key}:${name}"
   scratch true
   container "${params.container}"
-  containerOptions containerOption 
+  containerOptions fastaContainer
   
   input:
     tuple val(group_key), path(trimmed_r1)
@@ -60,7 +59,7 @@ process align_reads_paired {
   tag "${group_key}:${name}"
   scratch true
   container "${params.container}"
-  containerOptions containerOption 
+  containerOptions fastaContainer 
 
   input:
     tuple val(group_key), path(trimmed_r1), path(trimmed_r2)
@@ -239,6 +238,7 @@ process density_files {
   publishDir "${params.outdir}/${sample_id}"
   tag "${sample_id}"
   container "${params.container}"
+  containerOptions fastaContainer
 
   input:
     tuple val(sample_id), path(bam), path(bai)
@@ -281,7 +281,7 @@ process convert_to_cram {
   publishDir "${params.outdir}/${sample_id}"
   cpus params.threads
   container "${params.container}"
-  containerOptions containerOption
+  containerOptions fastaContainer
 
   input:
     tuple val(sample_id), path(bam), path(bam_index)

@@ -1,13 +1,13 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-include { get_nuclear_chroms_container } from "./aligning"
+include { get_container } from "./aligning"
 
 process call_hotspots {
 	tag "${id}"
 	publishDir "${params.outdir}/${id}"
     container "${params.container}"
-	containerOptions "${get_nuclear_chroms_container()}"
+	containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes)} ${get_container(params.mappable)} ${get_container(params.centers)}"
 	scratch true
 
 	input:
