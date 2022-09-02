@@ -14,12 +14,12 @@ process split_fasta_paired {
     container "${params.container}"
     scratch true
     input:
-        tuple val(sample_id), path(fastq1), path(fastq2)
+        tuple val(sample_id), val(align_id), path(fastq1), path(fastq2)
     output:
         tuple val(sample_id), path("out/${name_prefix1}*.fastq.gz"), path("out/${name_prefix2}*.fastq.gz")
     script:
-    name_prefix1 = "${fastq1.baseName}."
-    name_prefix2 = "${fastq2.baseName}."
+    name_prefix1 = "${align_id}.1."
+    name_prefix2 = "${align_id}.2."
     """
     mkdir out
     zcat "${fastq1}" \
@@ -57,21 +57,20 @@ process fastp_adapter_trim {
     cpus params.threads
     scratch true
     container "${params.container}"
-    publishDir "${params.outdir}/${sample_id}/stats/${simple_name}", pattern: "fastp*"
+    publishDir "${params.outdir}/${sample_id}/stats/", pattern: "${align_id}.fastp.*"
 
     input:
-        tuple val(sample_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
+        tuple val(sample_id), val(align_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
 
     output:
-        tuple val(sample_id), path(name1), path(name2), val(is_paired)
-        //tuple val(sample_id), path('fastp.json')
-        //tuple val(sample_id), path('fastp.html')
+        tuple val(sample_id), path(name1), path(name2), val(is_paired), emit: fastq
+        tuple val(sample_id), path('fastp.json'), emit: json
+        tuple val(sample_id), path('fastp.html'), emit: html
 
     script:
-    simple_name = r1.simpleName
-    name1 = "${r1.simpleName}.r1.trimmed.fastq.gz"
+    name1 = "${align_id}.r1.trimmed.fastq.gz"
     if (is_paired) {
-        name2 = "${r1.simpleName}.r2.trimmed.fastq.gz"
+        name2 = "${align_id}.r2.trimmed.fastq.gz"
         """
         fastp --in1 "${r1}" \
             --in2 "${r2}" \
@@ -82,6 +81,9 @@ process fastp_adapter_trim {
             --disable_quality_filtering \
             --disable_length_filtering \
             --thread ${task.cpus}
+        
+        mv fastp.html ${align_id}.fastp.html
+        mv fastp.json ${align_id}.fastp.json
         """
     } else {
         name2 = './'
@@ -92,25 +94,29 @@ process fastp_adapter_trim {
             --disable_quality_filtering \
             --disable_length_filtering \
             --thread ${task.cpus}
+        
+        mv fastp.html ${align_id}.fastp.html
+        mv fastp.json ${align_id}.fastp.json
         """
     }
 }
 
 workflow trimReads {
-    take: // [sample_id, r1, r2, adapter7, adapter5, is_paired]
+    take: // [sample_id, align_id, r1, r2, adapter7, adapter5, is_paired]
         data
     main:
         fasta_chunks = data.branch{ 
-            paired: it[5]
+            paired: it[6]
             single: true 
         }
         split_single = split_fasta_single(
-            fasta_chunks.single.map(it -> tuple(it[0], it[1]))
+            fasta_chunks.single.map(it -> tuple(it[0], it[1], it[2]))
         ).join(
             fasta_chunks.single.map(it -> tuple(it[0], file('./'),
             remove_ambiguous_bases(it[3]),
             it[4], 
-            it[5]))
+            it[5],
+            it[6]))
         ).transpose()
         split_paired = split_fasta_paired(
             fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2]))
@@ -120,16 +126,16 @@ workflow trimReads {
             remove_ambiguous_bases(it[4]), 
             it[5]))
         ).transpose()
-        fastp_adapter_trim(split_single.mix(split_paired))
+        trimmed = fastp_adapter_trim(split_single.mix(split_paired)).out.fastq
     emit:
-        fastp_adapter_trim.out
+        trimmed
 }
 
 workflow trimReadsFromFile {
     main:
         reads_ch = Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.sample_id, row.reads1,
+            .map(row -> tuple(row.sample_id, row.align_id, row.reads1,
                                 row.reads2 != '' ? row.reads2 : './' , row.adapterP5, 
                                 row.adapterP7, row.type == 'paired'))
         trimReads(set_key_for_group_tuple(reads_ch))
