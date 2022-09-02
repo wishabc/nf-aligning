@@ -112,18 +112,22 @@ workflow trimReads {
         split_single = split_fasta_single(
             fasta_chunks.single.map(it -> tuple(it[0], it[1], it[2]))
         ).join(
-            fasta_chunks.single.map(it -> tuple(it[0], it[1], file('./'),
-            remove_ambiguous_bases(it[4]),
-            it[5],
-            it[6]))
+            fasta_chunks.single.map(it -> tuple(it[0], file('./'),
+                remove_ambiguous_bases(it[4]),
+                it[5],
+                it[6])
+            )
         ).transpose()
         split_paired = split_fasta_paired(
             fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2], it[3]))
-        ).map(it -> tuple(it[0], it[1].sort(), it[2].sort())).join(
+        ).map(
+            it -> tuple(it[0], it[1].sort(), it[2].sort())
+        ).join(
             fasta_chunks.paired.map(it -> tuple(it[0],
-            remove_ambiguous_bases(it[4]), 
-            remove_ambiguous_bases(it[5]), 
-            it[6]))
+                remove_ambiguous_bases(it[4]), 
+                remove_ambiguous_bases(it[5]), 
+                it[6])
+            )
         ).transpose()
 
         trimmed = fastp_adapter_trim(split_single.mix(split_paired)).fastq
