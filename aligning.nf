@@ -10,12 +10,14 @@ def set_key_for_group_tuple(ch) {
 }
 
 genome_fasta_file = file(params.genome_fasta_file)
+containerOption = "-v ${genome_fasta_file.parent}:${genome_fasta_file.parent}"
 
 process align_reads_single {
   cpus params.threads
   tag "${group_key}:${name}"
   scratch true
   container "${params.container}"
+  containerOptions containerOption 
   
   input:
     tuple val(group_key), path(trimmed_r1)
@@ -50,6 +52,7 @@ process align_reads_paired {
   tag "${group_key}:${name}"
   scratch true
   container "${params.container}"
+  containerOptions containerOption 
 
   input:
     tuple val(group_key), path(trimmed_r1), path(trimmed_r2)
