@@ -10,6 +10,29 @@ def remove_ambiguous_bases(adapter) {
     return x
 }
 
+process split_fasta_paired {
+    container "${params.container}"
+    scratch true
+    input:
+        tuple val(sample_id), path(fastq1), path(fastq2)
+    output:
+        tuple val(sample_id), path("out/${name_prefix}{1,2}*.fastq.gz")
+    script:
+    name_prefix = "${fastq.baseName}."
+    """
+    mkdir out
+    zcat "${fastq1}" \
+    | split -l "${params.chunk_size}" \
+      --filter='gzip -1 > out/\$FILE.fastq.gz' \
+      - "${name_prefix}1"
+    zcat "${fastq2}" \
+    | split -l "${params.chunk_size}" \
+      --filter='gzip -1 > out/\$FILE.fastq.gz' \
+      - "${name_prefix}2"
+    """
+
+}
+
 process split_fasta_single {
     container "${params.container}"
     scratch true
@@ -80,32 +103,24 @@ workflow trimReads {
             paired: it[5]
             single: true 
         }
-        split_single = fasta_chunks.single.map(it -> it[1]).splitFastq(by: params.chunk_size, 
-            file: true,
-            compress: true
-        )
-        split_single.view()
+        split_single = split_fasta_single(
+            fasta_chunks.single.map(it -> tuple(it[0], it[1]))
+        ).join(
+            fasta_chunks.single.map(it -> tuple(it[0], file('./'),
+            remove_ambiguous_bases(it[3]),
+            it[4], 
+            it[5]))
+        ).transpose()
 
-        // split_paired = fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2])).splitFastq(
-        //     by: params.chunk_size, 
-        //     pe: true,
-        //     file: true,
-        //     compress: true
-        // ).join(
-        //     fasta_chunks.paired.map(it -> tuple(it[0],
-        //     remove_ambiguous_bases(it[3]), 
-        //     remove_ambiguous_bases(it[4]), 
-        //     it[5]))
-        // ).transpose()
-        //     tuple(it[0], 
-        //           split_fasta_file(it[1]),
-        //           it[5] ? split_fasta_file(it[2]) : './',
-        //            remove_ambiguous_bases(it[3]),
-        //            it[5] ? remove_ambiguous_bases(it[4]) : it[4],
-        //           it[5]
-        //         )
-        // }.transpose()
-        fastp_adapter_trim(split_single) //.split_paired
+        split_paired = split_fasta_paired(
+            fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2]))
+        ).join(
+            fasta_chunks.paired.map(it -> tuple(it[0],
+            remove_ambiguous_bases(it[3]), 
+            remove_ambiguous_bases(it[4]), 
+            it[5]))
+        ).transpose()
+        fastp_adapter_trim(split_single.mix(split_paired))
     emit:
         fastp_adapter_trim.out
 }
