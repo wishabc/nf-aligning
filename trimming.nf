@@ -22,7 +22,7 @@ process split_fasta_file {
     """
     mkdir out
     zcat "${fastq}" \
-    | split -l "${fastq_line_count}" \
+    | split -l "${params.chunk_size}" \
       --filter='gzip -1 > out/\$FILE.gz' \
       - "${name_prefix}"
     """
