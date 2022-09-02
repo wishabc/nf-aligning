@@ -18,7 +18,6 @@ process align_reads_single {
   
   input:
     tuple val(group_key), path(trimmed_r1)
-    path("${fasta_file}*")
 
   output:
     tuple val(group_key), path(name)
@@ -29,16 +28,16 @@ process align_reads_single {
   bwa aln \
     -Y -l 32 -n 0.04 \
     -t "${task.cpus}" \
-    "${fasta_file}" \
+    "${params.genome_fasta_file}" \
     "${trimmed_r1}" \
     > out.sai
 
   bwa samse \
     -n 10 \
-    "${fasta_file}" \
+    "${params.genome_fasta_file}" \
     out.sai \
     "${trimmed_r1}" \
-  | samtools view -b -T ${fasta_file} - \
+  | samtools view -b -T ${params.genome_fasta_file} - \
   > ${name}
   """
 }
@@ -52,7 +51,6 @@ process align_reads_paired {
 
   input:
     tuple val(group_key), path(trimmed_r1), path(trimmed_r2)
-    path("${fasta_file}*")
 
   output:
     tuple val(group_key), path(name)
@@ -63,22 +61,22 @@ process align_reads_paired {
   bwa aln \
     -Y -l 32 -n 0.04 \
     -t "${task.cpus}" \
-    "${fasta_file}" \
+    "${params.genome_fasta_file}" \
     "${trimmed_r1}" \
     > out1.sai
 
   bwa aln \
     -Y -l 32 -n 0.04 \
     -t "${task.cpus}" \
-    "${fasta_file}" \
+    "${params.genome_fasta_file}" \
     "${trimmed_r2}" \
     > out2.sai
   bwa sampe \
     -n 10 -a 750 \
-    "${fasta_file}" \
+    "${params.genome_fasta_file}" \
     out1.sai out2.sai \
     "${trimmed_r1}" "${trimmed_r2}" \
-  | samtools view -b -T ${fasta_file} - \
+  | samtools view -b -T ${params.genome_fasta_file} - \
   > ${name}
   """
 }
@@ -294,10 +292,8 @@ workflow alignBwa {
       paired: it[4]
       single: true
     }
-    paired_bam = align_reads_paired(reads_divided.paired.map(it -> tuple(it[0], it[1], it[2])),
-                       params.genome_fasta_file)
-    single_bam = align_reads_single(reads_divided.single.map(it -> tuple(it[0], it[1])),
-                        params.genome_fasta_file)
+    paired_bam = align_reads_paired(reads_divided.paired.map(it -> tuple(it[0], it[1], it[2])))
+    single_bam = align_reads_single(reads_divided.single.map(it -> tuple(it[0], it[1])))
     all_bam = paired_bam.mix(single_bam)
   emit:
     all_bam
