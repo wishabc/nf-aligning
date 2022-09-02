@@ -8,7 +8,7 @@ process call_hotspots {
 	scratch true
 
 	input:
-	    tuple val(id), val(bam_file)
+	    tuple val(id), path(bam_file)
 
 	output:
 	    tuple val(id), path(name), path("${id}.hotspots.fdr005.starch"), path("${id}.hotspots.fdr001.starch")
