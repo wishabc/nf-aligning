@@ -16,7 +16,7 @@ process split_fasta_paired {
     input:
         tuple val(sample_id), path(fastq1), path(fastq2)
     output:
-        tuple val(sample_id), path("out/{${name_prefix1}}*.fastq.gz"), path("out/{${name_prefix2}}*.fastq.gz")
+        tuple val(sample_id), path("out/${name_prefix1}*.fastq.gz"), path("out/${name_prefix2}*.fastq.gz")
     script:
     name_prefix1 = "${fastq1.baseName}."
     name_prefix2 = "${fastq2.baseName}."
