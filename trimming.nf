@@ -11,7 +11,7 @@ def remove_ambiguous_bases(adapter) {
 }
 
 process split_fasta_file {
-    container "${params.container}", fixOwnership: true
+    container "${params.container}"
 
     input:
         tuple val(sample_id), path(fastq)
