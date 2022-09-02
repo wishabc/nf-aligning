@@ -2,7 +2,9 @@
 nextflow.enable.dsl = 2
 
 def split_fasta_file(file_path) {
-    return Channel.fromPath(file_path).splitFasta(by: params.chunk_size, file: true)
+    chunks = Channel.fromPath(file_path).splitFasta(by: params.chunk_size, file: true)
+    chunks.view()
+    return chunks
 }
 
 def remove_ambiguous_bases(adapter) {
