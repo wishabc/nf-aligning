@@ -126,7 +126,7 @@ workflow trimReads {
             remove_ambiguous_bases(it[4]), 
             it[5]))
         ).transpose()
-        trimmed = fastp_adapter_trim(split_single.mix(split_paired)).out.fastq
+        trimmed = fastp_adapter_trim(split_single.mix(split_paired)).fastq
     emit:
         trimmed
 }
