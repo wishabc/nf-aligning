@@ -80,8 +80,11 @@ workflow trimReads {
             paired: it[5]
             single: true 
         }
-        split_single = split_fasta_single(
-            fasta_chunks.single.map(it -> tuple(it[0], it[1]))
+        split_single = fasta_chunks.single.map(
+            it -> tuple(it[0], it[1])).splitFastq(
+            by: params.chunk_size, 
+            file: true,
+            compress: true
         ).join(
             fasta_chunks.single.map(it -> tuple(it[0], file('./'),
             remove_ambiguous_bases(it[3]),
@@ -89,7 +92,7 @@ workflow trimReads {
             it[5]))
         ).transpose()
 
-        split_paired = fasta_chunks.paired.map(it -> tuple(it[0], tuple(it[1], it[2]))).splitFastq(
+        split_paired = fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2])).splitFastq(
             by: params.chunk_size, 
             pe: true,
             file: true,
