@@ -18,7 +18,7 @@ process split_fasta_file {
     output:
         tuple val(sample_id), path("out/${name_prefix}*")
     script:
-    name_prefix = r1.baseName
+    name_prefix = fastq.baseName
     """
     mkdir out
     zcat "${fastq}" \
