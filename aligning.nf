@@ -5,9 +5,8 @@ nextflow.enable.dsl = 2
 // it knows how many objects in the group are going to be
 def set_key_for_group_tuple(ch) {
   s = ch.groupTuple()
-  s.view()
   s.map(it -> groupKey(it[0], it[1].size())).view()
-  a = s.map{ it -> tuple(groupKey(it[0], it[1].size()), it[1..(it.size()-1)]) }
+  a = s.map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
   a.view()
   a.transpose()
 }
