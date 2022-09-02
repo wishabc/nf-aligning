@@ -92,17 +92,17 @@ workflow trimReads {
             it[5]))
         ).transpose()
 
-        split_paired = fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2])).splitFastq(
-            by: params.chunk_size, 
-            pe: true,
-            file: true,
-            compress: true
-        ).join(
-            fasta_chunks.paired.map(it -> tuple(it[0],
-            remove_ambiguous_bases(it[3]), 
-            remove_ambiguous_bases(it[4]), 
-            it[5]))
-        ).transpose()
+        // split_paired = fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2])).splitFastq(
+        //     by: params.chunk_size, 
+        //     pe: true,
+        //     file: true,
+        //     compress: true
+        // ).join(
+        //     fasta_chunks.paired.map(it -> tuple(it[0],
+        //     remove_ambiguous_bases(it[3]), 
+        //     remove_ambiguous_bases(it[4]), 
+        //     it[5]))
+        // ).transpose()
         //     tuple(it[0], 
         //           split_fasta_file(it[1]),
         //           it[5] ? split_fasta_file(it[2]) : './',
