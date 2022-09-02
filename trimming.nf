@@ -16,7 +16,7 @@ process split_fasta_paired {
     input:
         tuple val(sample_id), path(fastq1), path(fastq2)
     output:
-        tuple val(sample_id), path("out/{${name_prefix1},${name_prefix2}}*.fastq.gz")
+        tuple val(sample_id), path("out/{${name_prefix1}}*.fastq.gz"), path("out/{${name_prefix2}}*.fastq.gz")
     script:
     name_prefix1 = "${fastq1.baseName}."
     name_prefix2 = "${fastq2.baseName}."
@@ -114,10 +114,7 @@ workflow trimReads {
         ).transpose()
         par = split_fasta_paired(
             fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2]))
-        )
-        par.view()
-        par.collate(2).view()
-        split_paired = par.collate(2).join(
+        ).map(it -> tuple(it[0], it[1].sort(), it[2].sort())).join(
             fasta_chunks.paired.map(it -> tuple(it[0],
             remove_ambiguous_bases(it[3]), 
             remove_ambiguous_bases(it[4]), 
