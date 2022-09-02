@@ -130,7 +130,7 @@ workflow trimReadsFromFile {
         reads_ch = Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.sample_id, row.reads1,
-                                row.reads2 != '' ?: './', row.adapterP5, 
+                                row.reads2 == '' ? './' : , row.adapterP5, 
                                 row.adapterP7, row.type == 'paired'))
         trimReads(set_key_for_group_tuple(reads_ch))
     emit:
