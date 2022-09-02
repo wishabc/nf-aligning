@@ -1,6 +1,8 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
+include { nuclearChromsContainer } from "./aligning"
+
 process call_hotspots {
 	tag "${id}"
 	publishDir "${params.outdir}/${id}"
