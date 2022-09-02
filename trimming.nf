@@ -76,7 +76,10 @@ workflow trimReads {
     take: // [sample_id, r1, r2, adapter7, adapter5, is_paired]
         data
     main:
-        fasta_chunks = data.branch{ paired: it[5], single: true }
+        fasta_chunks = data.branch{ 
+            paired: it[5]
+            single: true 
+        }
         split_single = split_fasta_file(
             fasta_chunks.single.map(it -> tuple(it[0], it[1]))
         ).join(
