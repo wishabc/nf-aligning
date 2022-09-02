@@ -304,7 +304,7 @@ workflow alignReads {
   take:
     trimmed_reads
   main:
-    aligned_files = set_key_for_group_tuple(trimmed_reads) | alignBwa | filter_and_sort
+    aligned_files = trimmed_reads | alignBwa | filter_and_sort
     filtered_bam_files = merge_bam(aligned_files.groupTuple()) 
     | mark_duplicates 
     | filter
@@ -323,5 +323,5 @@ workflow {
       .fromPath(params.samples_file)
       .splitCsv(header:true, sep:'\t')
 		  .map(row -> tuple( row.sample_id, row.reads1, row.reads2, row.is_paired))
-    alignReads(fastq_trimmed_paired)
+    alignReads(set_key_for_group_tuple(fastq_trimmed_paired))
 }

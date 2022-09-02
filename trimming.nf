@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-
+include { set_key_for_group_tuple } from "./aligning"
 
 def remove_ambiguous_bases(adapter) {
     x = adapter.takeWhile { it in ['A', 'C', 'T', 'G'] }
@@ -132,7 +132,7 @@ workflow trimReadsFromFile {
             .map(row -> tuple(row.sample_id, row.reads1,
                                 row.reads2, row.adapterP5, 
                                 row.adapterP7, row.type == 'paired'))
-        trimReads(reads_ch)
+        trimReads(set_key_for_group_tuple(reads_ch))
     emit:
         trimReads.out
 }
