@@ -24,17 +24,18 @@ process align_reads_single {
 
   script:
   name = "${trimmed_r1.baseName}.bam"
+  bwa_index = params.genome_fasta_file.baseName
   """
   bwa aln \
     -Y -l 32 -n 0.04 \
     -t "${task.cpus}" \
-    "${params.genome_fasta_file}" \
+    "${bwa_index}" \
     "${trimmed_r1}" \
     > out.sai
 
   bwa samse \
     -n 10 \
-    "${params.genome_fasta_file}" \
+    "${bwa_index}" \
     out.sai \
     "${trimmed_r1}" \
   | samtools view -b -T ${params.genome_fasta_file} - \
@@ -57,23 +58,24 @@ process align_reads_paired {
 
   script:
   name = "${trimmed_r1.baseName}.bam"
+  bwa_index = params.genome_fasta_file.baseName
   """
   bwa aln \
     -Y -l 32 -n 0.04 \
     -t "${task.cpus}" \
-    "${params.genome_fasta_file}" \
+    "${bwa_index}" \
     "${trimmed_r1}" \
     > out1.sai
 
   bwa aln \
     -Y -l 32 -n 0.04 \
     -t "${task.cpus}" \
-    "${params.genome_fasta_file}" \
+    "${bwa_index}" \
     "${trimmed_r2}" \
     > out2.sai
   bwa sampe \
     -n 10 -a 750 \
-    "${params.genome_fasta_file}" \
+    "${bwa_index}" \
     out1.sai out2.sai \
     "${trimmed_r1}" "${trimmed_r2}" \
   | samtools view -b -T ${params.genome_fasta_file} - \
