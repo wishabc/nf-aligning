@@ -84,9 +84,22 @@ workflow trimReads {
             fasta_chunks.single.map(it -> tuple(it[0], it[1]))
         ).join(
             fasta_chunks.single.map(it -> tuple(it[0], file('./'),
-             remove_ambiguous_bases(it[3]), it[4], it[5]))
+            remove_ambiguous_bases(it[3]),
+            it[4], 
+            it[5]))
         ).transpose()
-        split_single.view()
+
+        split_paired = split_fasta_file(
+            fasta_chunks.paired.flatMap{ it -> [tuple(it[0], it[1]), 
+                                                tuple(it[0], it[2])] }
+                                                .collate(2)
+                                                .map(it -> tuple(it[0][0], it[0][1], it[1][1]))
+        ).join(
+            fasta_chunks.paired.map(it -> tuple(it[0],
+            remove_ambiguous_bases(it[3]), 
+            remove_ambiguous_bases(it[4]), 
+            it[5]))
+        ).transpose()
         //     tuple(it[0], 
         //           split_fasta_file(it[1]),
         //           it[5] ? split_fasta_file(it[2]) : './',
@@ -95,7 +108,7 @@ workflow trimReads {
         //           it[5]
         //         )
         // }.transpose()
-        fastp_adapter_trim(split_single)
+        fastp_adapter_trim(split_single.mix(split_paired))
     emit:
         fastp_adapter_trim.out
 }
