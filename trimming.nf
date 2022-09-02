@@ -89,7 +89,7 @@ workflow trimReads {
             it[5]))
         ).transpose()
 
-        split_paired = fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2])).splitFastq(
+        split_paired = fasta_chunks.paired.map(it -> tuple(it[0], tuple(it[1], it[2]))).splitFastq(
             by: params.chunk_size, 
             pe: true,
             file: true,
