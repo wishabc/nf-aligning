@@ -322,7 +322,8 @@ workflow alignReads {
     trimmed_reads
   main:
     aligned_files = alignBwa(trimmed_reads) | filter_and_sort
-    aligned_files.groupTuple().view()
+    aligned_files.view()
+    aligned_files.groupTuple()
     filtered_bam_files = merge_bam(aligned_files.groupTuple()) 
     | mark_duplicates 
     | filter
