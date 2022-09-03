@@ -16,7 +16,7 @@ def get_container(file_name) {
 
 fastaContainer = get_container(params.genome_fasta_file)
 nuclearChromsContainer = get_container(params.nuclear_chroms)
-
+genome_fasta_file = file(params.genome_fasta_file)
 params.density_buckets = "${moduleDir}/data/chrom-buckets.bed.starch"
 
 process align_reads_single {
