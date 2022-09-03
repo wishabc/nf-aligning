@@ -135,8 +135,8 @@ workflow trimReadsFromFile {
         reads_ch = Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.sample_id, row.align_id, row.reads1,
-                                row.reads2 != '' ? row.reads2 : file('./'), row.adapterP5, 
-                                row.adapterP7, row.type == 'paired'))
+                                row.type == 'paired' ? row.reads2 : file('./'), row.type == 'paired' ? remove_ambiguous_bases(row.adapterP5) : "", 
+                                remove_ambiguous_bases(row.adapterP7), row.type == 'paired'))
         trimReads(set_key_for_group_tuple(reads_ch))
     emit:
         trimReads.out
