@@ -330,7 +330,7 @@ workflow alignReads {
     is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[3])).distinct()
     
     insert_size(filtered_bam_files.join(is_paired_dict))
-    //density_files(filtered_bam_files)
+    density_files(filtered_bam_files)
     convert_to_cram(filtered_bam_files)
   emit:
     convert_to_cram.out
