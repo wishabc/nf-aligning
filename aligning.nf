@@ -4,9 +4,10 @@ nextflow.enable.dsl = 2
 // Workaround, so when we groupTuple later, 
 // it knows how many objects in the group are going to be
 def set_key_for_group_tuple(ch) {
-  ch.groupTuple()
+  a = ch.groupTuple()
   .map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
-  .transpose()
+  a.view()
+  a.transpose()
 }
 
 def get_container(file_name) {
@@ -17,7 +18,7 @@ def get_container(file_name) {
 fastaContainer = get_container(params.genome_fasta_file)
 nuclearChromsContainer = get_container(params.nuclear_chroms)
 genome_fasta_file = file(params.genome_fasta_file)
-params.density_buckets = "${moduleDir}/data/chrom-buckets.bed.starch"
+params.
 
 process align_reads_single {
   cpus params.threads
