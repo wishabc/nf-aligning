@@ -4,6 +4,7 @@ nextflow.enable.dsl = 2
 // Workaround, so when we groupTuple later, 
 // it knows how many objects in the group are going to be
 def set_key_for_group_tuple(ch) {
+  ch.groupTuple().view()
   a = ch.groupTuple()
   .map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
   a.view()
