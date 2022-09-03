@@ -60,7 +60,7 @@ process fastp_adapter_trim {
     publishDir "${params.outdir}/${sample_id}/stats/"
 
     input:
-        tuple val(sample_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
+        tuple val(sample_id), val(align_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
 
     output:
         tuple val(sample_id), path(name1), path(name2), val(is_paired), emit: fastq
@@ -68,9 +68,9 @@ process fastp_adapter_trim {
         // tuple val(sample_id), path('fastp.html'), emit: html
 
     script:
-    name1 = "${r1.baseName}.trimmed.fastq.gz"
+    name1 = "${align_id}.1.trimmed.fastq.gz"
     if (is_paired) {
-        name2 = "${r2.baseName}.trimmed.fastq.gz"
+        name2 = "${align_id}.2.trimmed.fastq.gz"
         """
         fastp --in1 "${r1}" \
             --in2 "${r2}" \
