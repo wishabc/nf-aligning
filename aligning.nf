@@ -114,7 +114,7 @@ process filter_and_sort {
   python3 $projectDir/bin/filter_reads.py \
     ${bam_file} \
     filtered.bam \
-    ${nuclear_chroms}
+    ${params.nuclear_chroms}
   # sort
   samtools sort \
     -l 0 -m 1G -@"${task.cpus}" filtered.bam \
