@@ -321,8 +321,6 @@ workflow alignReads {
     trimmed_reads
   main:
     aligned_files = alignBwa(trimmed_reads) | filter_and_sort
-    aligned_files.view()
-    aligned_files.groupTuple(by: 0).view()
     filtered_bam_files = merge_bam(aligned_files.groupTuple()) 
     | mark_duplicates 
     | filter
@@ -340,6 +338,6 @@ workflow {
     fastq_trimmed_paired = Channel
       .fromPath(params.samples_file)
       .splitCsv(header:true, sep:'\t')
-		  .map(row -> tuple( row.sample_id, row.reads1, row.reads2, row.is_paired))
+		  .map(row -> tuple( row.sample_id, row.reads1, row.reads2, row.type == 'paired'))
     alignReads(set_key_for_group_tuple(fastq_trimmed_paired))
 }
