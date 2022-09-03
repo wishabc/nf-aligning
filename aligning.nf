@@ -7,7 +7,7 @@ def set_key_for_group_tuple(ch) {
   a = ch.groupTuple()
   .map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
   a.view()
-  a.transpose()
+  return a.transpose()
 }
 
 def get_container(file_name) {
@@ -18,7 +18,6 @@ def get_container(file_name) {
 fastaContainer = get_container(params.genome_fasta_file)
 nuclearChromsContainer = get_container(params.nuclear_chroms)
 genome_fasta_file = file(params.genome_fasta_file)
-params.
 
 process align_reads_single {
   cpus params.threads
