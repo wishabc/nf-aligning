@@ -25,7 +25,6 @@ RUN git clone https://github.com/Altius/hotspot2.git \
 
 FROM build-base as build-conda
 COPY ./environment.yml /environment.yml
-
 RUN --mount=type=cache,target=/opt/conda/pkgs mamba env create -n babachi --file /environment.yml && echo 'conda activate babachi' >> ~/.bashrc
 SHELL ["conda", "run", "--no-capture-output", "-n", "babachi", "/bin/bash", "-c"]
 
