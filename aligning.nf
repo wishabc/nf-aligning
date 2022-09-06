@@ -237,7 +237,7 @@ process density_files {
   publishDir "${params.outdir}/${sample_id}"
   tag "${sample_id}"
   container "${params.container}"
-  containerOptions fastaContainer
+  containerOptions "${fastaContainer} ${get_container(params.density_buckets)}"
 
   input:
     tuple val(sample_id), path(bam), path(bai)
