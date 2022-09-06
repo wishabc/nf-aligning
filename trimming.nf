@@ -10,49 +10,6 @@ def remove_ambiguous_bases(adapter) {
     return x
 }
 
-// process split_fasta_paired {
-//     container "${params.container}"
-//     scratch true
-//     input:
-//         tuple val(sample_id), val(align_id), path(fastq1), path(fastq2)
-//     output:
-//         tuple val(sample_id), path("out/${name_prefix1}*.fastq.gz"), path("out/${name_prefix2}*.fastq.gz")
-//     script:
-//     name_prefix1 = "${align_id}.1."
-//     name_prefix2 = "${align_id}.2."
-//     """
-//     mkdir out
-//     zcat "${fastq1}" \
-//     | split -l "${params.chunk_size}" \
-//       --filter='gzip -1 > out/\$FILE.fastq.gz' \
-//       - "${name_prefix1}"
-//     zcat "${fastq2}" \
-//     | split -l "${params.chunk_size}" \
-//       --filter='gzip -1 > out/\$FILE.fastq.gz' \
-//       - "${name_prefix2}"
-//     """
-
-// }
-
-// process split_fasta_single {
-//     container "${params.container}"
-//     scratch true
-//     input:
-//         tuple val(sample_id), val(align_id), path(fastq)
-//     output:
-//         tuple val(sample_id), path("out/${name_prefix}*")
-//     script:
-//     name_prefix = "${align_id}."
-//     """
-//     mkdir out
-//     zcat "${fastq}" \
-//     | split -l "${params.chunk_size}" \
-//       --filter='gzip -1 > out/\$FILE.fastq.gz' \
-//       - "${name_prefix}"
-//     """
-
-// }
-
 process fastp_adapter_trim {
     cpus params.threads
     scratch true
@@ -69,13 +26,18 @@ process fastp_adapter_trim {
 
     script:
     name1 = "${align_id}.1.trimmed.fastq.gz"
+    if (adapterP7 == "") {
+        command = is_paired ? "--detect_adapter_for_pe" : ""
+    } else {
+        command = "--adapter_sequence ${adapterP7}" + (is_paired ? " --adapter_sequence_r2 ${adapterP5}" : "")
+    }
+    
     if (is_paired) {
         name2 = "${align_id}.2.trimmed.fastq.gz"
         """
         fastp --in1 "${r1}" \
             --in2 "${r2}" \
-            --adapter_sequence    "${adapterP7}" \
-            --adapter_sequence_r2 "${adapterP5}" \
+            ${command} \
             --out1 "${name1}" \
             --out2 "${name2}" \
             --disable_quality_filtering \
@@ -86,7 +48,7 @@ process fastp_adapter_trim {
         name2 = './'
         """
         fastp -i "${r1}" \
-            --adapter_sequence "${adapterP7}" \
+            ${command} \
             -o ${name1} \
             --disable_quality_filtering \
             --disable_length_filtering \
@@ -99,32 +61,6 @@ workflow trimReads {
     take: // [sample_id, align_id, r1, r2, adapter7, adapter5, is_paired]
         data
     main:
-        // fasta_chunks = data.branch{ 
-        //     paired: it[6]
-        //     single: true 
-        // }
-        // split_single = split_fasta_single(
-        //     fasta_chunks.single.map(it -> tuple(it[0], it[1], it[2]))
-        // ).join(
-        //     fasta_chunks.single.map(it -> tuple(it[0], file('./'),
-        //         remove_ambiguous_bases(it[4]),
-        //         it[5],
-        //         it[6])
-        //     )
-        // ).transpose()
-        // split_paired = split_fasta_paired(
-        //     fasta_chunks.paired.map(it -> tuple(it[0], it[1], it[2], it[3]))
-        // ).map(
-        //     it -> tuple(it[0], it[1].sort(), it[2].sort())
-        // ).join(
-        //         fasta_chunks.paired.map(it -> tuple(it[0],
-        //         remove_ambiguous_bases(it[4]), 
-        //         remove_ambiguous_bases(it[5]), 
-        //         it[6])
-        //     )
-        // ).transpose()
-
-        // trimmed = fastp_adapter_trim(split_single.mix(split_paired)).fastq
         trimmed = fastp_adapter_trim(data).fastq
     emit:
         trimmed

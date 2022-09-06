@@ -2,7 +2,7 @@
 nextflow.enable.dsl = 2
 
 // Workaround, so when we groupTuple later, 
-// it knows how many objects in the group are going to be
+// New key contains info on how many objects are in the group
 def set_key_for_group_tuple(ch) {
   ch.groupTuple()
   .map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
@@ -11,7 +11,7 @@ def set_key_for_group_tuple(ch) {
 
 def get_container(file_name) {
   parent = file(file_name).parent
-  nuclearChromsContainer = "-v ${parent}:${parent}"
+  container = "-v ${parent}:${parent}"
 }
 
 fastaContainer = get_container(params.genome_fasta_file)
