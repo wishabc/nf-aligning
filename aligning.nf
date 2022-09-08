@@ -224,12 +224,14 @@ process insert_size {
   | grep -v chrM \
   | grep -v chrC \
   | xargs samtools view -b "${bam}" -o nuclear.bam
+  touch ${stats_name}
+  touch ${pdf_name}
   picard CollectInsertSizeMetrics \
     INPUT=nuclear.bam \
     OUTPUT=${stats_name} \
     HISTOGRAM_FILE=${pdf_name} \
     VALIDATION_STRINGENCY=LENIENT \
-    ASSUME_SORTED=true
+    ASSUME_SORTED=true 2>/dev/null
   """
 }
 
