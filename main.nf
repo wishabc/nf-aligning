@@ -25,7 +25,7 @@ process symlink_or_download {
         prefetch -L 1 ${srr}
         cd ${srr}
         ffq -o ${metadata} ${srr} || echo 'No metadata downloaded.' > no_metadata.json
-        fasterq-dump --threads ${task.cpus} ${srr}
+        fasterq-dump -L 1 --threads ${task.cpus} ${srr}
         find . -name "*.fastq" -exec pigz {} \\;
     else
         mkdir ${srr}
