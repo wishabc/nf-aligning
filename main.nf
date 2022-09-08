@@ -38,7 +38,7 @@ workflow downloadFiles {
         ids_channel = Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
             .map(row -> tuple(row.sample_id, row.align_id))
-        reads = download_or_search(ids_channel).fastq
+        reads = symlink_or_download(ids_channel).fastq
         // Check if is_paired and convert to trimming pipeline format
         output = reads.map( 
             it -> (!it[2].exists() || it[2].length() == 0) ?
