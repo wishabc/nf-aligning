@@ -7,6 +7,7 @@ include { trimReadsFromFile; trimReads } from "./trimming"
 process symlink_or_download {
     publishDir "${outdir}/fasta", pattern: "${metadata}"
     cpus params.threads
+    tag "${srr}"
     //container "${params.container}"
     //containerOptions "${get_container(params.readdirectory)}"
     conda "/home/sabramov/miniconda3/envs/babachi"
@@ -24,7 +25,7 @@ process symlink_or_download {
         echo "${params.readdirectory} does not contain expected FastQ files. Downloading"
         prefetch -L 1 ${srr}
         cd ${srr}
-        ffq -o ${metadata} ${srr} || echo 'No metadata downloaded.' > no_metadata.json
+        #ffq -o ${metadata} ${srr} || echo 'No metadata downloaded.' > no_metadata.json
         fasterq-dump -L 1 --threads ${task.cpus} ${srr}
         find . -name "*.fastq" -exec pigz {} \\;
     else
