@@ -5,7 +5,7 @@ include { trimReadsFromFile; trimReads } from "./trimming"
 
 
 process symlink_or_download {
-    publishDir "${outdir}/fasta", pattern: "${metadata}"
+    publishDir "${outdir}/fasta"
     cpus params.threads
     tag "${srr}"
     //container "${params.container}"
@@ -45,7 +45,7 @@ workflow downloadFiles {
         reads = symlink_or_download(ids_channel).fastq
         // Check if is_paired and convert to trimming pipeline format
         output = reads.map( 
-            it -> (!file(it[2]).exists() || file(it[2]).length() == 0) ?
+            it -> (!file(it[2]).exists() || file(it[2]).size() == 0) ?
               tuple(it[0], it[1], it[4], path("./"), "", "", false) :
               tuple(it[0], it[1], it[2], it[3], "", "", true)
         )
