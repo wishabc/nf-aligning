@@ -1,14 +1,15 @@
 #!/usr/bin/env nextflow
-include { alignReads } from "./aligning"
+include { alignReads; get_container } from "./aligning"
 include { callHotspots } from "./hotspots_calling"
 include { trimReadsFromFile; trimReads } from "./trimming"
-
 
 
 process symlink_or_download {
     publishDir "${outdir}/fasta", pattern: "${metadata}"
     cpus params.threads
-    container "${params.container}"
+    //container "${params.container}"
+    //containerOptions "${get_container(params.readdirectory)}"
+    conda "/home/sabramov/miniconda3/envs/babachi"
     input:
         tuple val(sample_id), val(srr)
     output:
