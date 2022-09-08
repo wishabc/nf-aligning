@@ -50,8 +50,10 @@ workflow downloadFiles {
 }
 
 workflow alignTrimmed {
+    take:
+        data
     main:
-        alignReads() | callHotspots
+        alignReads(data) | callHotspots
     emit:
         callHotspots.out
 }
