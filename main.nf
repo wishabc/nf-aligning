@@ -8,6 +8,7 @@ include { trimReadsFromFile; trimReads } from "./trimming"
 process symlink_or_download {
     publishDir "${outdir}/fasta", pattern: "${metadata}"
     cpus params.threads
+    container "${params.container}"
     input:
         tuple val(sample_id), val(srr)
     output:
@@ -20,7 +21,7 @@ process symlink_or_download {
     if [ ! -d ${params.readdirectory}/${srr}/ ] || test -n "\$(find . -maxdepth 1 -wholename "${params.readdirectory}/${srr}/*.fastq.gz" -print -quit)"
     then
         echo "${params.readdirectory} does not contain expected FastQ files. Downloading"
-        prefetch ${srr}
+        prefetch -L 1 ${srr}
         cd ${srr}
         ffq -o ${metadata} ${srr} || echo 'No metadata downloaded.' > no_metadata.json
         fasterq-dump --threads ${task.cpus} ${srr}
