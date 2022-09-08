@@ -17,7 +17,7 @@ process symlink_or_download {
     script:
     metadata = "${srr}_info.json"
     """
-    if [ ! -d ${params.readdirectory}/${align_id}/ ] || test -n "\$(find . -maxdepth 1 -wholename "${params.readdirectory}/${align_id}/*.fastq.gz" -print -quit)"
+    if [ ! -d ${params.readdirectory}/${srr}/ ] || test -n "\$(find . -maxdepth 1 -wholename "${params.readdirectory}/${srr}/*.fastq.gz" -print -quit)"
     then
         echo "${params.readdirectory} does not contain expected FastQ files. Downloading"
         prefetch ${srr}
