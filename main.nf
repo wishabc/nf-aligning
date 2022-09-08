@@ -15,7 +15,7 @@ process symlink_or_download {
         tuple val(sample_id), val(srr)
     output:
         tuple val(sample_id), val(srr), path("${srr}/${srr}_1.fastq.gz"), path("${srr}/${srr}_2.fastq.gz"), path("${srr}/${srr}.fastq.gz"), emit: fastq
-        //tuple val(srr), path(metadata), emit: meta
+        tuple val(srr), path(metadata), emit: meta
 
     script:
     metadata = "${srr}_info.json"
@@ -24,11 +24,9 @@ process symlink_or_download {
     then
         echo "${params.readdirectory} does not contain expected FastQ files. Downloading"
         prefetch -L 1 ${srr}
-        cd ${srr}
-        #ffq -o ${metadata} ${srr} || echo 'No metadata downloaded.' > no_metadata.json
-        fasterq-dump -L 1 -f --threads ${task.cpus} ${srr} 2>out.txt
-        find . -name "*.fastq" -exec pigz {} \\;
-        cd ../
+        ffq -o ${metadata} ${srr} 2>/dev/null || echo 'No metadata downloaded.' > no_metadata.json
+        fasterq-dump -L 1 -f --threads ${task.cpus} -O ${srr} ${srr} 2>/dev/null
+        find ./${srr} -name "*.fastq" -exec pigz {} \\;
     else
         mkdir ${srr}
         ln -s ${params.readdirectory}/${srr}/* ${srr}
