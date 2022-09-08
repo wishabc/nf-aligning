@@ -16,4 +16,6 @@ dependencies:
   - samtools=1.15
   - fastp
   - picard
+  - pigz
+  - sra-tools
 prefix: /home/sabramov/miniconda3/envs/babachi

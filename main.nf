@@ -5,11 +5,12 @@ include { trimReadsFromFile; trimReads } from "./trimming"
 
 
 process symlink_or_download {
-    publishDir "${params.outdir}/fasta", pattern: "${metadata}"
+    publishDir "${params.outdir}/${srr}/meta", pattern: "${metadata}"
+    publishDir "${params.outdir}/${srr}", pattern: "${srr}*.fastq.gz"
     cpus params.threads
     tag "${srr}"
-    container "${params.container}"
-    containerOptions "${get_container(params.readdirectory)}"
+    //container "${params.container}"
+    //containerOptions "${get_container(params.readdirectory)}"
     conda "/home/sabramov/miniconda3/envs/babachi"
 
     input:
