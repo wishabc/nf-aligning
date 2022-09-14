@@ -35,6 +35,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update
 RUN apt-get install -y \
       bash \
+      libkrb5-dev \
+      libcurl3 \
       bc
 
 COPY --from=build-hotspot2 /hotspot2/bin /usr/local/bin/

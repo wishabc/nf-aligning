@@ -136,10 +136,17 @@ process merge_bam {
 
   script:
   name = "${group_key}.bam"
-  """
-  samtools merge ${name} ${bamfiles}
-  samtools index ${name}
-  """
+  if (bamfiles.size() > 1) {
+    """
+    samtools merge ${name} ${bamfiles}
+    samtools index ${name}
+    """
+  } else {
+    """
+    ln -s ${bamfiles} ${name} 
+    samtools index ${name}
+    """
+  }
 }
 
 /*
@@ -180,6 +187,7 @@ process filter {
   container "${params.container}"
   containerOptions nuclearChromsContainer
   tag "${sample_id}"
+  scratch true
 
   input:
     tuple val(sample_id), path(bam), path(bam_index), path(picard_dup_file) 
