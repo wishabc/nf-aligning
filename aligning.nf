@@ -245,7 +245,8 @@ process insert_size {
 process macs2 {
   tag "${sample_id}"
   publishDir "${params.outdir}/${sample_id}/stats"
-  scratch false
+  container "${params.container}"
+  scratch true
 
   when:
     params.do_macs
@@ -262,10 +263,11 @@ process macs2 {
   macs2 callpeak \
     -t "${bam}" \
     -f ${mode} \
-    -g hs \
     -n ${sample_id}\
-    -B \
-    -q 0.01
+    -g 2.7e9 -p 0.01 \
+    --shift 75 --extsize 150 \
+    --nomodel -B --SPMR \
+    --keep-dup all --call-summits 
   """
 }
 process density_files {
