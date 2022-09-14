@@ -25,7 +25,7 @@ process symlink_or_download {
     then
         echo "${params.readdirectory} does not contain expected FastQ files. Downloading"
         prefetch -L 1 ${srr}
-        ffq -o ${metadata} ${srr} 2>/dev/null || echo 'No metadata downloaded.' > no_metadata.json
+        ffq -o ${metadata} ${srr} 2>/dev/null || echo 'No metadata downloaded.' > ${metadata}
         fasterq-dump -L 1 -f --threads ${task.cpus} -O ${srr} ${srr} 2>/dev/null
         find ./${srr} -name "*.fastq" -exec pigz {} \\;
     else
