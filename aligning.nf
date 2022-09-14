@@ -242,7 +242,32 @@ process insert_size {
     ASSUME_SORTED=true 2>/dev/null
   """
 }
+process macs2 {
+  tag "${sample_id}"
+  publishDir "${params.outdir}/${sample_id}/stats"
+  scratch false
 
+  when:
+    params.do_macs
+
+  input:
+    tuple val(sample_id), path(bam), path(bai), val(is_paired)
+
+  output:
+    tuple val(sample_id), path("${sample_id}*")
+
+  script:
+  mode = is_paired ? 'BAMPE' : 'BAM'
+  """
+  macs2 callpeak \
+    -t "${bam}" \
+    -f ${mode} \
+    -g hs \
+    -n ${sample_id}\
+    -B \
+    -q 0.01
+  """
+}
 process density_files {
   publishDir "${params.outdir}/${sample_id}"
   tag "${sample_id}"
@@ -337,8 +362,9 @@ workflow alignReads {
 
     is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[3])).distinct()
     
-    insert_size(filtered_bam_files.join(is_paired_dict))
-    //density_files(filtered_bam_files)
+    bam_files = filtered_bam_files.join(is_paired_dict)
+    insert_size(bam_files)
+    density_files(bam_files)
     convert_to_cram(filtered_bam_files)
   emit:
     convert_to_cram.out
