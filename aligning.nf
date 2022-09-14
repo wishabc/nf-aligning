@@ -366,7 +366,8 @@ workflow alignReads {
     
     bam_files = filtered_bam_files.join(is_paired_dict)
     insert_size(bam_files)
-    density_files(bam_files)
+    macs2(bam_files)
+    density_files(filtered_bam_files)
     convert_to_cram(filtered_bam_files)
   emit:
     convert_to_cram.out
