@@ -18,5 +18,6 @@ dependencies:
   - picard
   - pigz
   - sra-tools
+  - ffq
   - macs2
 prefix: /home/sabramov/miniconda3/envs/babachi
