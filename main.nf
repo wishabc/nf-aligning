@@ -9,9 +9,8 @@ process symlink_or_download {
     publishDir "${params.outdir}/${sample_id}", pattern: "${srr}/*.fastq.gz"
     cpus params.threads
     tag "${srr}"
-    conda "/home/sabramov/miniconda3/envs/babachi"
-    // container "${params.container}"
-    // containerOptions "${get_container(params.readdirectory)}"
+    container "${params.container}"
+    containerOptions "${get_container(params.readdirectory)}"
 
     input:
         tuple val(sample_id), val(srr)
