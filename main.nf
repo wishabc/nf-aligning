@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-include { alignReads; get_container } from "./aligning"
+include { alignReads; get_container; set_key_for_group_tuple } from "./aligning"
 include { callHotspots } from "./hotspots_calling"
 include { trimReadsFromFile; trimReads } from "./trimming"
 
@@ -39,9 +39,9 @@ process symlink_or_download {
 
 workflow downloadFiles {
     main:
-        ids_channel = Channel.fromPath(params.samples_file)
+        ids_channel = set_key_for_group_tuple(Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.sample_id, row.align_id))
+            .map(row -> tuple(row.sample_id, row.align_id)))
         reads = symlink_or_download(ids_channel).fastq
         // Check if is_paired and convert to trimming pipeline format
         output = reads.map( 
