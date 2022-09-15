@@ -282,7 +282,7 @@ process density_files {
   output:
     tuple val(sample_id), path("${sample_id}.density.bed.starch"), emit: starch
     tuple val(sample_id), path("${sample_id}.density.bw"), emit: bigwig
-    tuple val(sample_id), path("${sample_id}.density.bed.bgz"), emit: bgzip
+    tuple val(sample_id), path("${sample_id}.density.bed.bgz"), path("${sample_id}.density.bed.tbi") emit: bgzip
 
   script:
     """
@@ -298,13 +298,13 @@ process density_files {
       | awk -v binI=${params.density_step_size} -v win="${params.density_window_width}" \
           'BEGIN{ halfBin=binI/2; shiftFactor=win-halfBin } { print \$1 "\t" \$2 + shiftFactor "\t" \$3-shiftFactor "\tid\t" i \$4}' \
       | starch - \
-      > density.bed.starch
+      > ${sample_id}.density.bed.starch
       
     unstarch density.bed.starch | awk -v binI="${params.density_step_size}" -f "${moduleDir}/bin/bedToWig.awk" > density.wig
-    wigToBigWig -clip density.wig "${params.chrom_sizes}" density.bw
+    wigToBigWig -clip density.wig "${params.chrom_sizes}" ${sample_id}.density.bw
     
-    unstarch density.bed.starch | bgzip -c > density.bed.bgz
-    tabix -p bed density.bed.bgz
+    unstarch density.bed.starch | bgzip -c > ${sample_id}.density.bed.bgz
+    tabix -p bed ${sample_id}.density.bed.bgz
     """
 }
 
