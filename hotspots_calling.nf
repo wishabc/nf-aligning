@@ -7,7 +7,7 @@ process call_hotspots {
 	tag "${id}"
 	publishDir "${params.outdir}/${id}"
     container "${params.container}"
-	containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes)} ${get_container(params.mappable)} ${get_container(params.centers)}"
+	containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
 	scratch true
 
 	input:
@@ -27,7 +27,7 @@ process call_hotspots {
 
 	hotspot2.sh -F 0.05 -f 0.05 -p varWidth_20_${id} \
 		-M ${params.mappable} \
-    	-c ${params.chrom_sizes} \
+    	-c ${params.chrom_sizes_bed} \
     	-C ${params.centers} \
     	nuclear.bam \
     	peaks
@@ -41,7 +41,7 @@ process call_hotspots {
 		varWidth_20_${id} \
 		nuclear.cutcounts.starch \
 		nuclear.hotspots.fdr0.001.starch \
-		${params.chrom_sizes} \
+		${params.chrom_sizes_bed} \
 		nuclear.varw_density.fdr0.001.starch \
 		nuclear.varw_peaks.fdr0.001.starch \
 		\$(cat nuclear.cleavage.total)

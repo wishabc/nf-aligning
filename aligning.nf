@@ -274,7 +274,7 @@ process density_files {
   publishDir "${params.outdir}/${sample_id}"
   tag "${sample_id}"
   container "${params.container}"
-  containerOptions "${fastaContainer} ${get_container(params.density_buckets)}"
+  containerOptions "${get_container(params.chrom_sizes)} ${get_container(params.density_buckets)}"
 
   input:
     tuple val(sample_id), path(bam), path(bai)
@@ -301,9 +301,9 @@ process density_files {
       > density.bed.starch
       
     unstarch density.bed.starch | awk -v binI="${params.density_step_size}" -f "${moduleDir}/bin/bedToWig.awk" > density.wig
-    wigToBigWig -clip density.wig "${params.genome_fasta_file}" density.bw
+    wigToBigWig -clip density.wig "${params.chrom_sizes}" density.bw
     
-    unstarch density.bed.starch | bgzip > density.bed.bgz
+    unstarch density.bed.starch | bgzip -c > density.bed.bgz
     tabix -p bed density.bed.bgz
     """
 }
