@@ -282,7 +282,7 @@ process density_files {
   output:
     tuple val(sample_id), path("${sample_id}.density.bed.starch"), emit: starch
     tuple val(sample_id), path("${sample_id}.density.bw"), emit: bigwig
-    tuple val(sample_id), path("${sample_id}.density.bed.bgz"), path("${sample_id}.density.bed.tbi") emit: bgzip
+    tuple val(sample_id), path("${sample_id}.density.bed.bgz"), path("${sample_id}.density.bed.tbi"), emit: bgzip
 
   script:
     """
