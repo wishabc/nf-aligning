@@ -10,7 +10,6 @@ process symlink_or_download {
     cpus params.threads
     tag "${srr}"
     container "${params.container}"
-    containerOptions "${get_container(params.readdirectory)}"
 
     input:
         tuple val(sample_id), val(srr)
