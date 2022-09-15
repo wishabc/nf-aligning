@@ -300,7 +300,7 @@ process density_files {
       | starch - \
       > density.bed.starch
       
-    unstarch density.bed.starch | awk -v binI="${params.density_step_size}" -f "${moduleDir}/awk/bedToWig.awk" > density.wig
+    unstarch density.bed.starch | awk -v binI="${params.density_step_size}" -f "${moduleDir}/bin/bedToWig.awk" > density.wig
     wigToBigWig -clip density.wig "${params.genome_fasta_file}" density.bw
     
     unstarch density.bed.starch | bgzip > density.bed.bgz
