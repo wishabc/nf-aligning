@@ -16,7 +16,9 @@ def get_container(file_name) {
 
 fastaContainer = get_container(params.genome_fasta_file)
 nuclearChromsContainer = get_container(params.nuclear_chroms)
+chromSizesContainer = get_container(params.chrom_sizes)
 genome_fasta_file = file(params.genome_fasta_file)
+
 
 process align_reads_single {
   cpus params.threads
@@ -246,6 +248,7 @@ process macs2 {
   tag "${sample_id}"
   publishDir "${params.outdir}/${sample_id}/stats"
   container "${params.container}"
+  containerOptions "${chromSizesContainer}"
   scratch true
 
   when:
@@ -255,26 +258,27 @@ process macs2 {
     tuple val(sample_id), path(bam), path(bai), val(is_paired)
 
   output:
-    tuple val(sample_id), path("${sample_id}*")
+    tuple val(sample_id), path("macs2.${sample_id}*")
 
   script:
   mode = is_paired ? 'BAMPE' : 'BAM'
   """
+  gen_size=\$(cat ${params.chrom_sizes} | awk '{print \$2}' | paste -sd+ | bc)
   macs2 callpeak \
     -t "${bam}" \
     -f ${mode} \
-    -n ${sample_id}\
-    -g 2.7e9 -p 0.01 \
+    -n macs2.${sample_id}\
+    -g \$gen_size -p 0.01 \
     --shift 75 --extsize 150 \
     --nomodel -B --SPMR \
-    --keep-dup all --call-summits 
+    --keep-dup all --call-summits 2>"macs2.${sample_id}.err" || echo "MACS2 failed" >> "macs2.${sample_id}.err"
   """
 }
 process density_files {
-  publishDir "${params.outdir}/${sample_id}"
+  publishDir "${params.outdir}/${sample_id}/stats"
   tag "${sample_id}"
   container "${params.container}"
-  containerOptions "${get_container(params.chrom_sizes)} ${get_container(params.density_buckets)}"
+  containerOptions "${chromSizesContainer} ${get_container(params.density_buckets)}"
 
   input:
     tuple val(sample_id), path(bam), path(bai)

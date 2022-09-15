@@ -5,8 +5,8 @@ include { trimReadsFromFile; trimReads } from "./trimming"
 
 
 process symlink_or_download {
-    publishDir "${params.outdir}/${srr}/meta", pattern: "${metadata}"
-    publishDir "${params.outdir}/${srr}", pattern: "${srr}/*.fastq.gz"
+    publishDir "${params.outdir}/${sample_id}/stats", pattern: "${metadata}"
+    publishDir "${params.outdir}/${sample_id}", pattern: "${srr}/*.fastq.gz"
     cpus params.threads
     tag "${srr}"
     conda "/home/sabramov/miniconda3/envs/babachi"
@@ -22,17 +22,10 @@ process symlink_or_download {
     script:
     metadata = "${srr}_info.json"
     """
-    if [ ! -d ${params.readdirectory}/${srr}/ ] || test -n "\$(find . -maxdepth 1 -wholename "${params.readdirectory}/${srr}/*.fastq.gz" -print -quit)"
-    then
-        echo "${params.readdirectory} does not contain expected FastQ files. Downloading"
-        prefetch -L 1 ${srr}
-        ffq -o ${metadata} ${srr} 2>&1 || echo 'No metadata downloaded.' > ${metadata}
-        fasterq-dump -L 1 -f --threads ${task.cpus} -O ${srr} ${srr} 2>&1
-        find ./${srr} -name "*.fastq" -exec pigz {} \\;
-    else
-        mkdir ${srr}
-        ln -s ${params.readdirectory}/${srr}/* ${srr}
-    fi
+    prefetch -L 1 ${srr}
+    ffq -o ${metadata} ${srr} 2>&1 || echo 'No metadata downloaded.' > ${metadata}
+    fasterq-dump -L 1 -f --threads ${task.cpus} -O ${srr} ${srr} 2>&1
+    find ./${srr} -name "*.fastq" -exec pigz {} \\;
     """
 
 }

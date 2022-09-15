@@ -14,15 +14,15 @@ process fastp_adapter_trim {
     cpus params.threads
     scratch true
     container "${params.container}"
-    publishDir "${params.outdir}/${sample_id}/stats/"
+    publishDir "${params.outdir}/${sample_id}/stats/${align_id}", pattern: "fastp*"
 
     input:
         tuple val(sample_id), val(align_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
 
     output:
         tuple val(sample_id), path(name1), path(name2), val(is_paired), emit: fastq
-        // tuple val(sample_id), path('fastp.json'), emit: json
-        // tuple val(sample_id), path('fastp.html'), emit: html
+        tuple val(sample_id), path('fastp.json'), emit: json
+        tuple val(sample_id), path('fastp.html'), emit: html
 
     script:
     name1 = "${align_id}.1.trimmed.fastq.gz"
