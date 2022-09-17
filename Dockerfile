@@ -32,8 +32,7 @@ SHELL ["conda", "run", "--no-capture-output", "-n", "babachi", "/bin/bash", "-c"
 # Final image
 FROM ubuntu:18.04 AS aligning-plus-hotspots
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
       bash \
       libkrb5-dev \
       libcurl3 \
