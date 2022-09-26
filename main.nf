@@ -10,6 +10,7 @@ process symlink_or_download {
     cpus params.threads
     tag "${srr}"
     container "${params.container}"
+    containerOptions " --network=host"
 
     input:
         tuple val(sample_id), val(srr)
