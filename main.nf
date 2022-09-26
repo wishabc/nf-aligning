@@ -10,7 +10,7 @@ process symlink_or_download {
     cpus params.threads
     tag "${srr}"
     container "${params.container}"
-    containerOptions " --network=host"
+    containerOptions "--network=host"
 
     input:
         tuple val(sample_id), val(srr)
@@ -21,7 +21,7 @@ process symlink_or_download {
     script:
     metadata = "${srr}_info.json"
     """
-    prefetch -L 1 ${srr}
+    prefetch -L 1 ${srr} || echo 'Prefetched'
     ffq -o ${metadata} ${srr} 2>&1 || echo 'No metadata downloaded.' > ${metadata}
     fasterq-dump -L 1 -f --threads ${task.cpus} -O ${srr} ${srr} 2>&1
     find ./${srr} -name "*.fastq" -exec pigz {} \\;
