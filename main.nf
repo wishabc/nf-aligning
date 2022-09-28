@@ -9,6 +9,7 @@ process symlink_or_download {
     publishDir "${params.outdir}/${sample_id}", pattern: "${srr}/*.fastq.gz"
     cpus params.threads
     tag "${srr}"
+    maxForks 4
     errorStrategy 'ignore'
     container "${params.container}"
     containerOptions "--network=host"
