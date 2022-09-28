@@ -25,6 +25,9 @@ process symlink_or_download {
     ffq -o ${metadata} ${srr} 2>&1 || echo 'No metadata downloaded.' > ${metadata}
     fasterq-dump -L 1 -f --threads ${task.cpus} -O ${srr} ${srr} 2>&1
     find ./${srr} -name "*.fastq" -exec pigz {} \\;
+    touch ${srr}/${srr}_1.fastq.gz
+    touch ${srr}/${srr}_2.fastq.gz
+    touch ${srr}/${srr}.fastq.gz
     """
 
 }
@@ -37,7 +40,7 @@ workflow downloadFiles {
         reads = symlink_or_download(ids_channel).fastq
         // Check if is_paired and convert to trimming pipeline format
         output = reads.map( 
-            it -> (!file(it[2]).exists() || file(it[2]).size() == 0) ?
+            it -> (file(it[2]).size() == 0) ?
               tuple(it[0], it[1], it[4], path("./"), "", "", false) :
               tuple(it[0], it[1], it[2], it[3], "", "", true)
         )
