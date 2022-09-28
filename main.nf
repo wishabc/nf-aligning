@@ -30,7 +30,9 @@ process symlink_or_download {
     else
         touch ${metadata}
     fi
-
+    if ! [ -d ${srr} ]; then
+        mkdir ${srr}
+    fi
     touch ${srr}/${srr}_1.fastq.gz
     touch ${srr}/${srr}_2.fastq.gz
     touch ${srr}/${srr}.fastq.gz
