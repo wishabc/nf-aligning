@@ -9,6 +9,7 @@ process symlink_or_download {
     publishDir "${params.outdir}/${sample_id}", pattern: "${srr}/*.fastq.gz"
     cpus params.threads
     tag "${srr}"
+    errorStrategy 'ignore'
     container "${params.container}"
     containerOptions "--network=host"
 
@@ -21,10 +22,16 @@ process symlink_or_download {
     script:
     metadata = "${srr}_info.json"
     """
-    prefetch -L 1 ${srr} || echo 'Prefetched'
-    ffq -o ${metadata} ${srr} 2>&1 || echo 'No metadata downloaded.' > ${metadata}
-    fasterq-dump -L 1 -f --threads ${task.cpus} -O ${srr} ${srr} 2>&1
-    find ./${srr} -name "*.fastq" -exec pigz {} \\;
+    if prefetch -L 1 ${srr}; then
+        echo 'Prefetched'
+        ffq -o ${metadata} ${srr} 2>&1 || echo 'No metadata downloaded.' > ${metadata}
+        fasterq-dump -L 1 -f --threads ${task.cpus} -O ${srr} ${srr} 2>&1
+        find ./${srr} -name "*.fastq" -exec pigz {} \\;
+    else
+        mkdir ${srr}
+        touch ${metadata}
+    fi
+
     touch ${srr}/${srr}_1.fastq.gz
     touch ${srr}/${srr}_2.fastq.gz
     touch ${srr}/${srr}.fastq.gz
@@ -36,12 +43,13 @@ workflow downloadFiles {
     main:
         ids_channel = set_key_for_group_tuple(Channel.fromPath(params.samples_file)
             .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.sample_id, row.align_id)))
+            .map(row -> tuple(row.sample_id, row.align_id))).unique { it[1] }
         reads = symlink_or_download(ids_channel).fastq
         // Check if is_paired and convert to trimming pipeline format
-        output = reads.map( 
+        output = reads.filter { file(it[2]).size() + file(it[3]).size() + file(it[4]).size() != 0 }
+        .map( 
             it -> (file(it[2]).size() == 0) ?
-              tuple(it[0], it[1], it[4], path("./"), "", "", false) :
+              tuple(it[0], it[1], it[4], "${projectDir}", "", "", false) :
               tuple(it[0], it[1], it[2], it[3], "", "", true)
         )
     emit:
