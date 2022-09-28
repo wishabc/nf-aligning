@@ -28,7 +28,6 @@ process symlink_or_download {
         fasterq-dump -L 1 -f --threads ${task.cpus} -O ${srr} ${srr} 2>&1
         find ./${srr} -name "*.fastq" -exec pigz {} \\;
     else
-        mkdir ${srr}
         touch ${metadata}
     fi
 
