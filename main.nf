@@ -10,6 +10,7 @@ process symlink_or_download {
     cpus params.threads
     tag "${srr}"
     maxForks 4
+    scratch true
     errorStrategy 'ignore'
     container "${params.container}"
     containerOptions "--network=host"
