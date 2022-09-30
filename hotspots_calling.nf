@@ -14,7 +14,7 @@ process call_hotspots {
 	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
-	    tuple val(id), path(name), path("${id}.hotspots.fdr005.starch"), path("${id}.hotspots.fdr001.starch")
+	    tuple val(id), path(name), path("${id}.hotspots.fdr0.05.starch"), path("${id}.hotspots.fdr0.001.starch")
 
 	script:
     name = "${id}.varw_peaks.fdr0.001.starch"
