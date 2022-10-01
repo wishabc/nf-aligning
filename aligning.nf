@@ -172,10 +172,13 @@ process mark_duplicates {
   """
   picard RevertOriginalBaseQualitiesAndAddMateCigar \
     INPUT="${merged_bam}" OUTPUT=cigar.bam \
-    VALIDATION_STRINGENCY=SILENT RESTORE_ORIGINAL_QUALITIES=false SORT_ORDER=coordinate MAX_RECORDS_TO_EXAMINE=0
+    VALIDATION_STRINGENCY=SILENT RESTORE_ORIGINAL_QUALITIES=false \
+    SORT_ORDER=coordinate MAX_RECORDS_TO_EXAMINE=0 \
+    TMP_DIR=${workDir}
   picard MarkDuplicatesWithMateCigar \
       INPUT=cigar.bam OUTPUT=${name} \
       MINIMUM_DISTANCE=300 \
+      TMP_DIR=${workDir} \
       METRICS_FILE=${metric_name} ASSUME_SORTED=true VALIDATION_STRINGENCY=SILENT \
       READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
   samtools index ${name}
@@ -239,9 +242,10 @@ process insert_size {
   picard CollectInsertSizeMetrics \
     INPUT=nuclear.bam \
     OUTPUT=${stats_name} \
+    TMP_DIR=${workDir} \
     HISTOGRAM_FILE=${pdf_name} \
     VALIDATION_STRINGENCY=LENIENT \
-    ASSUME_SORTED=true 2>/dev/null
+    ASSUME_SORTED=true
   """
 }
 process macs2 {
