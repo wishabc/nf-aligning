@@ -9,6 +9,7 @@ process call_hotspots {
     container "${params.container}"
 	containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
 	scratch true
+	errorStrategy 'ignore'
 
 	input:
 	    tuple val(id), path(bam_file), path(bam_file_index)
