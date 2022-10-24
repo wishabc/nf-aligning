@@ -188,7 +188,7 @@ process mark_duplicates {
 /**
 Step 5: Filter down to nuclear reads passing filter
 **/
-process filter {
+process filter_nuclear {
   container "${params.container}"
   containerOptions nuclearChromsContainer
   tag "${sample_id}"
@@ -369,7 +369,7 @@ workflow alignReads {
     aligned_files = alignBwa(trimmed_reads) | filter_and_sort
     filtered_bam_files = merge_bam(aligned_files.groupTuple()) 
     | mark_duplicates 
-    | filter
+    | filter_nuclear
 
     is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[3])).distinct()
     
