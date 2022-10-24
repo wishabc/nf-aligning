@@ -11,7 +11,7 @@ def set_key_for_group_tuple(ch) {
 
 def get_container(file_name) {
   parent = file(file_name).parent
-  container = "-v ${parent}:${parent}"
+  containerOptions = "--bind ${parent}:${parent}"
 }
 
 fastaContainer = get_container(params.genome_fasta_file)
