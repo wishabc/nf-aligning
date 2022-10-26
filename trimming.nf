@@ -14,6 +14,7 @@ process fastp_adapter_trim {
     cpus params.threads
     scratch true
     container "${params.container}"
+    tag "${align_id}"
     publishDir "${params.outdir}/${sample_id}/stats/${align_id}", pattern: "fastp*"
 
     input:
