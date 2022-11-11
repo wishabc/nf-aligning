@@ -282,6 +282,7 @@ process macs2 {
 process density_files {
   publishDir "${params.outdir}/${sample_id}/stats"
   tag "${sample_id}"
+  errorStrategy 'ignore'
   container "${params.container}"
   containerOptions "${chromSizesContainer} ${get_container(params.density_buckets)}"
 
