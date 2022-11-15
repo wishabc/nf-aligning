@@ -285,6 +285,7 @@ process density_files {
   tag "${sample_id}"
   errorStrategy 'ignore'
   container "${params.container}"
+  label "high_mem"
   containerOptions "${chromSizesContainer} ${get_container(params.density_buckets)}"
 
   input:
