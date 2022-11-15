@@ -158,6 +158,7 @@ process merge_bam {
 process mark_duplicates {
   tag "${sample_id}"
   scratch true
+  label "high_mem"
   publishDir "${params.outdir}/${sample_id}/stats", pattern: "${metric_name}"
   container "${params.container}"
 
