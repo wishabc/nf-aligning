@@ -352,6 +352,86 @@ process convert_to_cram {
   """
 }
 
+process spot_score {
+ scratch false
+  input:
+    tuple val(meta), path(bam), path(bai), path(mappable_only), path(chrom_info)
+
+  output:
+    tuple val(meta), file('subsample.r1.spot.out'), file('spotdups.txt')
+
+  script:
+  read_length = (mappable_only.name =~ /K([0-9]+)/)[0][1]
+  // conditional to deal with single end data
+  view_params = "-F 12 -f 3"
+  if (params.paired)  
+    """
+    # random sample
+    samtools view -h ${view_params} "${bam}" \
+      | awk '{if( ! index(\$3, "chrM") && \$3 != "chrC" && \$3 != "random"){print}}' \
+      | samtools view -1 - \
+      -o sampled.bam
+
+    bash $moduleDir/bin/random_sample.sh sampled.bam subsample.bam 5000000
+    samtools view -1 -f 0x0040 subsample.bam -o subsample.r1.bam
+    # hotspot
+    bash runhotspot.bash \
+      \$HOTSPOT_DIR \
+      ./ \
+      subsample.r1.bam \
+      "${genome_name}" \
+      "${read_length}" \
+      DNaseI
+    # Remove existing duplication marks
+    picard RevertSam \
+      INPUT=subsample.bam \
+      OUTPUT=clear.bam \
+      VALIDATION_STRINGENCY=SILENT REMOVE_DUPLICATE_INFORMATION=true SORT_ORDER=coordinate \
+      RESTORE_ORIGINAL_QUALITIES=false REMOVE_ALIGNMENT_INFORMATION=false
+    picard MarkDuplicatesWithMateCigar \
+      INPUT=clear.bam \
+      METRICS_FILE=spotdups.txt \
+      OUTPUT=/dev/null \
+      ASSUME_SORTED=true \
+      MINIMUM_DISTANCE=300 \
+      VALIDATION_STRINGENCY=SILENT \
+      READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
+    """
+    else
+    """
+    # random sample
+    samtools view -h -F 12 -s 0.6 "${bam}" \
+      | awk '{if( ! index(\$3, "chrM") && \$3 != "chrC" && \$3 != "random"){print}}' \
+      | samtools view -1 - \
+      -o paired.bam
+    bash \$STAMPIPES/scripts/bam/random_sample.sh paired.bam subsample.bam 5000000
+          samtools view -1 subsample.bam -o subsample.r1.bam
+    # hotspot
+    bash \$STAMPIPES/scripts/SPOT/runhotspot.bash \
+      \$HOTSPOT_DIR \
+      \$PWD \
+      \$PWD/subsample.r1.bam \
+      "${genome_name}" \
+      "${read_length}" \
+      DNaseI
+    
+    # Remove existing duplication marks
+    picard RevertSam \
+      INPUT=subsample.bam \
+      OUTPUT=clear.bam \
+      VALIDATION_STRINGENCY=SILENT REMOVE_DUPLICATE_INFORMATION=true SORT_ORDER=coordinate \
+      RESTORE_ORIGINAL_QUALITIES=false REMOVE_ALIGNMENT_INFORMATION=false
+    picard MarkDuplicates \
+      INPUT=clear.bam \
+      METRICS_FILE=spotdups.txt \
+      OUTPUT=/dev/null \
+      ASSUME_SORTED=true \
+      VALIDATION_STRINGENCY=SILENT \
+      READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*' 
+    """
+}
+
+
 workflow alignBwa {
   take:
     trimmed_reads
