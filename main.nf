@@ -63,9 +63,9 @@ workflow alignTrimmed {
     take:
         data
     main:
-        alignReads(data) | callHotspots
+        out = alignReads(data) // | callHotspots
     emit:
-        callHotspots.out
+        out
 }
 
 workflow alignFromSRA {

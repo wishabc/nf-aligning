@@ -35,7 +35,7 @@ process call_hotspots {
 
 	cd peaks
 	hsmerge.sh -f 0.001 nuclear.allcalls.starch nuclear.hotspots.fdr0.001.starch
-	rm -f nuclear.varw_peaks.*
+	#rm -f nuclear.varw_peaks.*
 	
     density-peaks.bash \
 		./ \
