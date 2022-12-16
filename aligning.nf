@@ -130,6 +130,7 @@ process merge_bam {
   tag "${group_key}"
   container "${params.container}"
   scratch true
+  errorStrategy ignore
 
   input:
     tuple val(group_key), path(bamfiles)
