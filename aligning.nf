@@ -159,6 +159,7 @@ process mark_duplicates {
   tag "${sample_id}"
   scratch true
   label "high_mem"
+  maxForks 5
   time "2d"
 
   publishDir "${params.outdir}/${sample_id}/stats", pattern: "${metric_name}"
