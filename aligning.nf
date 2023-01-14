@@ -140,6 +140,7 @@ process merge_bam {
 
   script:
   name = "${group_key}.bam"
+  //if (group_key.size > 1) {
   if (bamfiles.size() > 1) {
     """
     samtools merge ${name} ${bamfiles}
@@ -160,8 +161,6 @@ process mark_duplicates {
   tag "${sample_id}"
   scratch true
   label "high_mem"
-  maxForks 5
-  time "2d"
 
   publishDir "${params.outdir}/${sample_id}/stats", pattern: "${metric_name}"
   container "${params.container}"
@@ -360,12 +359,12 @@ process spot_score {
     tuple val(meta), path(bam), path(bai), path(mappable_only), path(chrom_info)
 
   output:
-    tuple val(meta), file('subsample.r1.spot.out'), file('spotdups.txt')
+    tuple val(meta), file('spotdups.txt')
 
   script:
   read_length = (mappable_only.name =~ /K([0-9]+)/)[0][1]
   // conditional to deal with single end data
-  view_params = "-F 12 -f 3"
+  view_params = params.is_paired ? "" : "-F 12 -f 3"
   if (params.paired)  
     """
     # random sample
@@ -373,17 +372,9 @@ process spot_score {
       | awk '{if( ! index(\$3, "chrM") && \$3 != "chrC" && \$3 != "random"){print}}' \
       | samtools view -1 - \
       -o sampled.bam
-
+  
     bash $moduleDir/bin/random_sample.sh sampled.bam subsample.bam 5000000
-    samtools view -1 -f 0x0040 subsample.bam -o subsample.r1.bam
-    # hotspot
-    bash runhotspot.bash \
-      \$HOTSPOT_DIR \
-      ./ \
-      subsample.r1.bam \
-      "${genome_name}" \
-      "${read_length}" \
-      DNaseI
+
     # Remove existing duplication marks
     picard RevertSam \
       INPUT=subsample.bam \
@@ -407,8 +398,8 @@ process spot_score {
       | samtools view -1 - \
       -o paired.bam
     bash \$STAMPIPES/scripts/bam/random_sample.sh paired.bam subsample.bam 5000000
-          samtools view -1 subsample.bam -o subsample.r1.bam
-    # hotspot
+    
+    samtools view -1 -f 0x0040 subsample.bam -o subsample.r1.bam
     bash \$STAMPIPES/scripts/SPOT/runhotspot.bash \
       \$HOTSPOT_DIR \
       \$PWD \
@@ -416,7 +407,7 @@ process spot_score {
       "${genome_name}" \
       "${read_length}" \
       DNaseI
-    
+
     # Remove existing duplication marks
     picard RevertSam \
       INPUT=subsample.bam \
