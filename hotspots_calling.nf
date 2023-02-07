@@ -62,6 +62,17 @@ workflow callHotspots {
 		call_hotspots.out
 }
 
+workflow hotspots {
+	params.basepath = "/net/seq/data2/projects/sabramov/ENCODE4/atac_aligning/output"
+	metadata = Channel.fromPath(params.samples_file)
+		| splitCsv(header:true, sep:'\t')
+		| map(row -> tuple( row.sample_id, 
+			file("${params.basepath}/${row.sample_id}/${row.sample_id}.filtered.cram"),
+			file("${params.basepath}/${row.sample_id}/${row.sample_id}.filtered.cram.crai"),
+			))
+		| filter { it[1].exists() }
+	callHotspots(metadata)
+}
 workflow {
 	metadata = Channel
       .fromPath(params.samples_file)
