@@ -11,7 +11,7 @@ process call_hotspots {
 	//scratch true
 	//errorStrategy 'ignore'
 	module "hotspot2/2.1.1:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:modwt/1.0"
-
+	conda "/home/sabramov/miniconda3/envs/babachi"
 	input:
 	    tuple val(id), path(bam_file), path(bam_file_index)
 
