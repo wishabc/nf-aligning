@@ -5,20 +5,21 @@ include { get_container } from "./aligning"
 
 process call_hotspots {
 	tag "${id}"
-	publishDir "${params.outdir}/${id}"
-    container "${params.container}"
-	containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
+	publishDir "${params.outdir}/${id}", pattern: "${name}"
+    //container "${params.container}"
+	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
 	//scratch true
 	//errorStrategy 'ignore'
+	module "hotspot2/2.1.1:kentutil/302:bedops/2.4.35-typical:bedtools/2.25"
 
 	input:
 	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
-	    tuple val(id), path(name), path("${id}.hotspots.fdr0.05.starch"), path("${id}.hotspots.fdr0.001.starch")
+	    tuple val(id), path(name)
 
 	script:
-    name = "${id}.varw_peaks.fdr0.001.starch"
+    name = "${id}.peaks.fdr0.001.starch"
 	"""
 	samtools view -H ${bam_file} > header.txt
 	cat ${params.nuclear_chroms} \
@@ -26,30 +27,15 @@ process call_hotspots {
 		| samtools reheader header.txt - \
 		> nuclear.bam
 
-	hotspot2.sh -F 0.05 -f 0.05 -p varWidth_20_${id} \
-		-M ${params.mappable} \
-    	-c ${params.chrom_sizes_bed} \
-    	-C ${params.centers} \
-    	nuclear.bam \
-    	peaks
+	hotspot2.sh -F 0.001 -f 0.001 \
+		-p "varWidth_20_${params.id}" \
+		-M "${params.mappable}" \
+		-c "${params.chrom_sizes_bed}" \
+		-C "${params.centers}" \
+		nuclear.bam \
+		'.'
 
-	cd peaks
-	hsmerge.sh -f 0.001 nuclear.allcalls.starch nuclear.hotspots.fdr0.001.starch
-	#rm -f nuclear.varw_peaks.*
-	
-    density-peaks.bash \
-		./ \
-		varWidth_20_${id} \
-		nuclear.cutcounts.starch \
-		nuclear.hotspots.fdr0.001.starch \
-		${params.chrom_sizes_bed} \
-		nuclear.varw_density.fdr0.001.starch \
-		nuclear.varw_peaks.fdr0.001.starch \
-		\$(cat nuclear.cleavage.total)
-		
-        mv nuclear.varw_peaks.fdr0.001.starch ../${name}
-    	mv nuclear.hotspots.fdr0.05.starch ../${id}.hotspots.fdr0.05.starch
-    	mv nuclear.hotspots.fdr0.001.starch ../${id}.hotspots.fdr0.001.starch
+	mv ${params.id}.peaks.starch ${name}
 	"""
 }
 
