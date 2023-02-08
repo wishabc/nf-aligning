@@ -10,7 +10,7 @@ process call_hotspots {
 	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
 	//scratch true
 	//errorStrategy 'ignore'
-	module "hotspot2/2.1.1:kentutil/302:bedops/2.4.35-typical:bedtools/2.25"
+	module "hotspot2/2.1.1:kentutil/302:bedops/2.4.35-typical:bedtools/2.25:modwt/1.0"
 
 	input:
 	    tuple val(id), path(bam_file), path(bam_file_index)
