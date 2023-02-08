@@ -19,7 +19,7 @@ process call_hotspots {
 	    tuple val(id), path(name)
 
 	script:
-    name = "${id}.peaks.fdr0.001.starch"
+	name = "${id}.peaks.fdr0.001.starch"
 	"""
 	samtools view -H ${bam_file} > header.txt
 	cat ${params.nuclear_chroms} \
