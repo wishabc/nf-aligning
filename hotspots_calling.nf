@@ -27,7 +27,7 @@ process call_hotspots {
 		| samtools reheader header.txt - \
 		> nuclear.bam
 
-	hotspot2.sh -F 0.001 -f 0.001 \
+	/home/jvierstra/.local/src/hotspot2/scripts/hotspot2.sh -F 0.001 -f 0.001 \
 		-p "varWidth_20_${id}" \
 		-M "${params.mappable}" \
 		-c "${params.chrom_sizes_bed}" \
