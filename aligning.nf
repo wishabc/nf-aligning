@@ -130,6 +130,7 @@ process merge_bam {
   tag "${group_key}"
   container "${params.container}"
   scratch true
+  cpus 2
   errorStrategy "ignore"
 
   input:
@@ -140,10 +141,10 @@ process merge_bam {
 
   script:
   name = "${group_key}.bam"
-  //if (group_key.size > 1) {
-  if (bamfiles.size() > 1) {
+  if (group_key.size > 1) {
     """
-    samtools merge ${name} ${bamfiles}
+    samtools merge merged.bam ${bamfiles}
+    samtools sort -@"${task.cpus}" merged.bam > ${name}
     samtools index ${name}
     """
   } else {
