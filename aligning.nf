@@ -390,7 +390,7 @@ workflow alignReads {
 }
 
 workflow mergeFiles {
-  basepath = "/net/seq/data2/projects/sabramov/ENCODE4/atac_aligning"
+  basepath = "/net/seq/data2/projects/sabramov/ENCODE4/atac_aligning/output"
   bam_files = Channel.fromPath(params.samples_file)
     | splitCsv(header:true, sep:'\t')
     | map(row -> tuple(row.sample_id,
