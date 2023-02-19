@@ -401,6 +401,7 @@ workflow mergeFiles {
     | filter { it[2].exists() }
     | set_key_for_group_tuple
     | groupTuple()
+    | merge_bam
     | mark_duplicates 
     | filter_nuclear
     | convert_to_cram
