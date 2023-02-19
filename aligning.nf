@@ -399,6 +399,7 @@ workflow mergeFiles {
       file("${basepath}/${row.align_id}/${row.align_id}.filtered.cram.crai"),
      ))
     | filter { it[2].exists() }
+    | map(it -> tuple(it[0], it[2]))
     | set_key_for_group_tuple
     | groupTuple()
     | merge_bam
