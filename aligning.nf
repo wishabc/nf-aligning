@@ -130,6 +130,7 @@ process merge_bam {
   tag "${group_key}"
   container "${params.container}"
   scratch true
+  cpus 2
   errorStrategy "ignore"
 
   input:
@@ -140,10 +141,10 @@ process merge_bam {
 
   script:
   name = "${group_key}.bam"
-  //if (group_key.size > 1) {
-  if (bamfiles.size() > 1) {
+  if (group_key.size > 1) {
     """
-    samtools merge ${name} ${bamfiles}
+    samtools merge merged.bam ${bamfiles}
+    samtools sort -@"${task.cpus}" merged.bam > ${name}
     samtools index ${name}
     """
   } else {
@@ -324,7 +325,6 @@ process density_files {
   """
 }
 
-
 /**
 Step 6: Convert Filtered Bam to cram file
 **/
@@ -351,77 +351,6 @@ process convert_to_cram {
     --write-index \
     -o "${cramfile}"
   """
-}
-
-process spot_score {
- scratch false
-  input:
-    tuple val(meta), path(bam), path(bai), path(mappable_only), path(chrom_info)
-
-  output:
-    tuple val(meta), file('spotdups.txt')
-
-  script:
-  read_length = (mappable_only.name =~ /K([0-9]+)/)[0][1]
-  // conditional to deal with single end data
-  view_params = params.is_paired ? "" : "-F 12 -f 3"
-  if (params.paired)  
-    """
-    # random sample
-    samtools view -h ${view_params} "${bam}" \
-      | awk '{if( ! index(\$3, "chrM") && \$3 != "chrC" && \$3 != "random"){print}}' \
-      | samtools view -1 - \
-      -o sampled.bam
-  
-    bash $moduleDir/bin/random_sample.sh sampled.bam subsample.bam 5000000
-
-    # Remove existing duplication marks
-    picard RevertSam \
-      INPUT=subsample.bam \
-      OUTPUT=clear.bam \
-      VALIDATION_STRINGENCY=SILENT REMOVE_DUPLICATE_INFORMATION=true SORT_ORDER=coordinate \
-      RESTORE_ORIGINAL_QUALITIES=false REMOVE_ALIGNMENT_INFORMATION=false
-    picard MarkDuplicatesWithMateCigar \
-      INPUT=clear.bam \
-      METRICS_FILE=spotdups.txt \
-      OUTPUT=/dev/null \
-      ASSUME_SORTED=true \
-      MINIMUM_DISTANCE=300 \
-      VALIDATION_STRINGENCY=SILENT \
-      READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
-    """
-    else
-    """
-    # random sample
-    samtools view -h -F 12 -s 0.6 "${bam}" \
-      | awk '{if( ! index(\$3, "chrM") && \$3 != "chrC" && \$3 != "random"){print}}' \
-      | samtools view -1 - \
-      -o paired.bam
-    bash \$STAMPIPES/scripts/bam/random_sample.sh paired.bam subsample.bam 5000000
-    
-    samtools view -1 -f 0x0040 subsample.bam -o subsample.r1.bam
-    bash \$STAMPIPES/scripts/SPOT/runhotspot.bash \
-      \$HOTSPOT_DIR \
-      \$PWD \
-      \$PWD/subsample.r1.bam \
-      "${genome_name}" \
-      "${read_length}" \
-      DNaseI
-
-    # Remove existing duplication marks
-    picard RevertSam \
-      INPUT=subsample.bam \
-      OUTPUT=clear.bam \
-      VALIDATION_STRINGENCY=SILENT REMOVE_DUPLICATE_INFORMATION=true SORT_ORDER=coordinate \
-      RESTORE_ORIGINAL_QUALITIES=false REMOVE_ALIGNMENT_INFORMATION=false
-    picard MarkDuplicates \
-      INPUT=clear.bam \
-      METRICS_FILE=spotdups.txt \
-      OUTPUT=/dev/null \
-      ASSUME_SORTED=true \
-      VALIDATION_STRINGENCY=SILENT \
-      READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*' 
-    """
 }
 
 
@@ -460,6 +389,35 @@ workflow alignReads {
   emit:
     convert_to_cram.out
 }
+
+workflow mergeFiles {
+  basepath = "/net/seq/data2/projects/sabramov/ENCODE4/atac_aligning/output"
+  bam_files = Channel.fromPath(params.samples_file)
+    | splitCsv(header:true, sep:'\t')
+    | map(row -> tuple(row.sample_id,
+      row.align_id,
+      file("${basepath}/${row.align_id}/${row.align_id}.filtered.cram"),
+      file("${basepath}/${row.align_id}/${row.align_id}.filtered.cram.crai"),
+     ))
+    | filter { it[2].exists() }
+    | map(it -> tuple(it[0], it[2]))
+    | set_key_for_group_tuple
+    | groupTuple()
+    | merge_bam
+    | mark_duplicates 
+    | filter_nuclear
+    | convert_to_cram
+
+    // is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[3])).distinct()
+    
+    // bam_files = filtered_bam_files.join(is_paired_dict)
+    // insert_size(bam_files)
+    // macs2(bam_files)
+    // density_files(filtered_bam_files)
+  emit:
+    bam_files
+}
+
 
 workflow {
     fastq_trimmed_paired = Channel
