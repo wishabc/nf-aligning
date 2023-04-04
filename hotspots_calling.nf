@@ -5,29 +5,39 @@ include { get_container } from "./aligning"
 
 process call_hotspots {
 	tag "${id}"
-	publishDir "${params.outdir}/${id}", pattern: "${name}"
-    //container "${params.container}"
+	label 'high_mem'
+	publishDir "${params.outdir}/${id}", pattern: "${name}", mode: 'copy'
+	publishDir "${params.outdir}/${id}", pattern: "nuclear.SPOT.txt", mode: 'copy', saveAs: { "${id}.SPOT.txt" } 
+	publishDir "${params.outdir}/${id}", pattern: "nuclear.cleavage.total", mode: 'copy', saveAs: { "${id}.cleavage.total" }
+	publishDir "${params.outdir}/${id}", pattern: "nuclear.density.bw", mode: 'copy', saveAs: { "${id}.density.bw" }
+	publishDir "${params.outdir}/${id}", pattern: "nuclear.hotspot2.info", mode: 'copy', saveAs: { "${id}.hotspot2.info" }
+	publishDir "${params.outdir}/${id}", pattern: "nuclear.cutcounts.starch", mode: 'copy', saveAs: { "${id}.cutcounts.starch" }
+
+    	//container "${params.container}"
 	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
+	errorStrategy 'ignore'
 	//scratch true
-	//errorStrategy 'ignore'
-	module "hotspot2/2.1.1:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:modwt/1.0:samtools/1.14"
+	module "modwt/1.0:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:hotspot2/2.1.1:samtools/1.3"
 	//conda "/home/sabramov/miniconda3/envs/babachi"
 	input:
 	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
-	    tuple val(id), path(name)
+	    tuple val(id), path(name), path(spot), path("nuclear.cleavage.total"), path("nuclear.density.bw"), path("nuclear.hotspot2.info"), path("nuclear.cutcounts.starch")
 
 	script:
 	name = "${id}.peaks.fdr0.001.starch"
+	spot = "nuclear.SPOT.txt"
 	"""
+	export TMPDIR=\$(mktemp -d)
+
 	samtools view -H ${bam_file} > header.txt
 	cat ${params.nuclear_chroms} \
 		| xargs samtools view -b ${bam_file} \
 		| samtools reheader header.txt - \
 		> nuclear.bam
 
-	/home/jvierstra/.local/src/hotspot2/scripts/hotspot2.sh -F 0.001 -f 0.001 \
+	hotspot2.sh -F 0.001 -f 0.001 \
 		-p "varWidth_20_${id}" \
 		-M "${params.mappable}" \
 		-c "${params.chrom_sizes_bed}" \
@@ -35,7 +45,9 @@ process call_hotspots {
 		nuclear.bam \
 		'.'
 
-	mv ${id}.peaks.starch ${name}
+	mv nuclear.peaks.starch ${name}
+	echo -e "hotspot2-num-bases\t\$(unstarch --bases    "${name}")" >> nuclear.hotspot2.info
+  	echo -e "hotspot2-num-spots\t\$(unstarch --elements "${name}")" >> nuclear.hotspot2.info
 	"""
 }
 
