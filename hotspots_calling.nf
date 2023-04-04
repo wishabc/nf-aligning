@@ -17,7 +17,7 @@ process call_hotspots {
 	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
 	errorStrategy 'ignore'
 	//scratch true
-	module "modwt/1.0:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:hotspot2/2.1.1:samtools/1.3"
+	module "modwt/1.0:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:samtools/1.3:hotspot2/2.1.1"
 	//conda "/home/sabramov/miniconda3/envs/babachi"
 	input:
 	    tuple val(id), path(bam_file), path(bam_file_index)
