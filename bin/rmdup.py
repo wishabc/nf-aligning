@@ -31,18 +31,19 @@ else:
 
 chr = pos = None
 read_cache = []
-
+flags = []
 for read in infile:
     if chr is None:
         chr = read.rname
         pos = read.pos
         continue
-    print(read.flag)
     if read.rname != chr or read.pos != pos:
         if len(read_cache) > 0:
             outfile.write(rng.choice(read_cache))
 
         read_cache = []
+        flags = []
     read_cache.append(read)
+    flags.append(read.flag)
 infile.close()
 outfile.close()
