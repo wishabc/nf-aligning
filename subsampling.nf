@@ -84,7 +84,6 @@ workflow {
                 row.uniq_id, 
                 file(row.bam_file), 
                 file("${row.bam_file}.crai")))
-    bams.view()
     preprocessBams(bams) // | callHotspots
 
 }
