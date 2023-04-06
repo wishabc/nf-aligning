@@ -3,6 +3,7 @@ nextflow.enable.dsl = 2
 
 include { get_container } from "./aligning"
 
+// Need to contenirize at some point
 process call_hotspots {
 	tag "${id}"
 	label 'high_mem'
@@ -16,11 +17,10 @@ process call_hotspots {
     	//container "${params.container}"
 	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
 	errorStrategy 'ignore'
-	//scratch true
 	module "modwt/1.0:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:samtools/1.3:hotspot2/2.1.1"
-	//conda "/home/sabramov/miniconda3/envs/babachi"
+
 	input:
-	    tuple val(id), path(bam_file), path(bam_file_index)
+	    tuple val(id), path("nuclear.cram"), path("nuclear.cram.crai")
 
 	output:
 	    tuple val(id), path(name), path(spot), path("nuclear.cleavage.total"), path("nuclear.density.bw"), path("nuclear.hotspot2.info"), path("nuclear.cutcounts.starch")
@@ -31,18 +31,12 @@ process call_hotspots {
 	"""
 	export TMPDIR=\$(mktemp -d)
 
-	samtools view -H ${bam_file} > header.txt
-	cat ${params.nuclear_chroms} \
-		| xargs samtools view -b ${bam_file} \
-		| samtools reheader header.txt - \
-		> nuclear.bam
-
 	hotspot2.sh -F 0.001 -f 0.001 \
 		-p "varWidth_20_${id}" \
 		-M "${params.mappable}" \
 		-c "${params.chrom_sizes_bed}" \
 		-C "${params.centers}" \
-		nuclear.bam \
+		nuclear.cram \
 		'.'
 
 	mv nuclear.peaks.starch ${name}
