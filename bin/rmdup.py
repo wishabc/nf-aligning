@@ -37,6 +37,7 @@ for read in infile:
         chr = read.rname
         pos = read.pos
         continue
+    print(read.flag)
     if read.rname != chr or read.pos != pos:
         if len(read_cache) > 0:
             outfile.write(rng.choice(read_cache))
