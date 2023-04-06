@@ -12,14 +12,13 @@ def main(infile, outfile, reads_count, sample_size):
         shutil.copyfile(infile, outfile)
         return
 
-    sorted_read_indexes = rng.choice(range(reads_count), sample_size, replace=False)
-    sorted_read_indexes.sort()
+    sorted_read_indexes = set(rng.choice(range(reads_count), sample_size, replace=False))
 
     print('Selecting %d read pairs' % len(sorted_read_indexes))
 
     with pysam.AlignmentFile(infile, 'rb') as in_alignment_file, pysam.AlignmentFile(outfile, 'wb', template=in_alignment_file) as out_alignment_file:
         for i, alignment in enumerate(in_alignment_file):
-            if i == sorted_read_indexes[i]:
+            if i in sorted_read_indexes:
                 out_alignment_file.write(alignment)
 
 
