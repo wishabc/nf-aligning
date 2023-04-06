@@ -47,7 +47,7 @@ process remove_duplicates {
 process subsample {
     tag "${uniq_id}"
     conda params.conda
-    publishDir "${params.outdir}/subsampled"
+    publishDir "${params.outdir}/${uniq_id}"
 
     input:
         tuple val(uniq_id), path(bam_file), path(bam_file_index)
@@ -85,7 +85,7 @@ workflow {
                 file(row.bam_file), 
                 file("${row.bam_file}.crai")))
     data = preprocessBams(bams) 
-    // data | callHotspots // For hotspot2
+    callHotspots(data) // For hotspot2
     // data | spot_score // make it work for hotspot1
 
 }
