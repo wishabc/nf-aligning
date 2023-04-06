@@ -1,4 +1,4 @@
-# this script is taken from https://github.com/vierstralab/WASP/blob/master/mapping/rmdup.py
+# this script is adapted from https://github.com/vierstralab/WASP/blob/master/mapping/rmdup.py
 
 import pysam
 import argparse
@@ -30,22 +30,18 @@ else:
 
 
 chr = pos = None
-linelistplus = []
-linelistminus = []
-for line in infile:
-    if line.rname != chr or line.pos != pos:
-        if len(linelistplus) > 0:
-            outfile.write(rng.choice(linelistplus))
-        if len(linelistminus) > 0:
-            outfile.write(rng.choice(linelistminus))
-        chr = line.rname
-        pos = line.pos
-        linelistplus = []
-        linelistminus = []
-    print(line.flag)
-    if line.flag == 0:
-        linelistplus.append(line)
-    if line.flag == 16:
-        linelistminus.append(line)
+read_cache = []
+
+for read in infile:
+    if chr is None:
+        chr = read.rname
+        pos = read.pos
+        continue
+    if read.rname != chr or read.pos != pos:
+        if len(read_cache) > 0:
+            outfile.write(rng.choice(read_cache))
+
+        read_cache = []
+    read_cache.append(read)
 infile.close()
 outfile.close()
