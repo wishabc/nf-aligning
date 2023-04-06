@@ -29,23 +29,23 @@ else:
     raise ValueError("name of output file must end with .bam or .sam")
 
 
-chr=""
-pos=0
-linelistplus=[]
-linelistminus=[]
+chr = pos = None
+linelistplus = []
+linelistminus = []
 for line in infile:
     if line.rname != chr or line.pos != pos:
-        if(len(linelistplus)>0):
+        if len(linelistplus) > 0:
             outfile.write(rng.choice(linelistplus))
-        if(len(linelistminus)>0):
+        if len(linelistminus) > 0:
             outfile.write(rng.choice(linelistminus))
-        chr=line.rname
-        pos=line.pos
-        linelistplus=[]
-        linelistminus=[]
-    if line.flag==0:
+        chr = line.rname
+        pos = line.pos
+        linelistplus = []
+        linelistminus = []
+    print(line.flag)
+    if line.flag == 0:
         linelistplus.append(line)
-    if(line.flag==16):
+    if line.flag == 16:
         linelistminus.append(line)
 infile.close()
 outfile.close()
