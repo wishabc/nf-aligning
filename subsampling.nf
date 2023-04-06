@@ -84,6 +84,8 @@ workflow {
                 row.uniq_id, 
                 file(row.bam_file), 
                 file("${row.bam_file}.crai")))
-    preprocessBams(bams) // | callHotspots
+    data = preprocessBams(bams) 
+    // data | callHotspots // For hotspot2
+    // data | spot_score // make it work for hotspot1
 
 }
