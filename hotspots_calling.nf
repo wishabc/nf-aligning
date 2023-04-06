@@ -20,7 +20,7 @@ process call_hotspots {
 	module "modwt/1.0:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:samtools/1.3:hotspot2/2.1.1"
 
 	input:
-	    tuple val(id), path("nuclear.cram"), path("nuclear.cram.crai")
+	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
 	    tuple val(id), path(name), path(spot), path("nuclear.cleavage.total"), path("nuclear.density.bw"), path("nuclear.hotspot2.info"), path("nuclear.cutcounts.starch")
@@ -28,15 +28,20 @@ process call_hotspots {
 	script:
 	name = "${id}.peaks.fdr0.001.starch"
 	spot = "nuclear.SPOT.txt"
+	renamed_input = "nuclear.${bam_file.extension}"
 	"""
 	export TMPDIR=\$(mktemp -d)
+
+	# workaround for hotspots2 naming scheme
+	ln -s ${bam_file} ${renamed_input}
+	ln -s ${bam_file_index} ${renamed_input}.${bam_file_index.extension}
 
 	hotspot2.sh -F 0.001 -f 0.001 \
 		-p "varWidth_20_${id}" \
 		-M "${params.mappable}" \
 		-c "${params.chrom_sizes_bed}" \
 		-C "${params.centers}" \
-		nuclear.cram \
+		${renamed_input} \
 		'.'
 
 	mv nuclear.peaks.starch ${name}
