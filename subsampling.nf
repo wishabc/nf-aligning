@@ -39,7 +39,7 @@ process remove_duplicates {
     new_id = "${uniq_id}.dedupped"
     name = "${new_id}.bam"
     """
-    python3 $moduleDir/bin/remove_dup.py ${bam_file} ${name}
+    python3 $moduleDir/bin/rmdup.py ${bam_file} ${name}
     samtools index ${name}
     """
 }
