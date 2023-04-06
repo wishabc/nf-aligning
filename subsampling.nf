@@ -47,6 +47,7 @@ process remove_duplicates {
 process subsample {
     tag "${uniq_id}"
     conda params.conda
+    publishDir "${params.outdir}/subsampled"
 
     input:
         tuple val(uniq_id), path(bam_file), path(bam_file_index)
@@ -67,11 +68,9 @@ workflow preprocessBams {
     take:
         data
     main:
-        data_and_info = data.combine(r_tags)
-			| take_r1_from_pair
-
-        subsampled_data = remove_duplicates(data_and_info) 
-            | mix(data_and_info)
+        r1_data = take_r1_from_pair(data)
+        subsampled_data = remove_duplicates(r1_data ) 
+            | mix(r1_data)
             | subsample
         
     emit:
