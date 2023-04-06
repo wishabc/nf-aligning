@@ -33,7 +33,6 @@ chr = pos = None
 read_cache = []
 flags = []
 for read in infile:
-    print(chr, pos)
     if read.rname != chr or read.pos != pos:
         if len(read_cache) > 0:
             outfile.write(rng.choice(read_cache))
