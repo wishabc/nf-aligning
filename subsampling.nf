@@ -69,7 +69,7 @@ workflow preprocessBams {
         data
     main:
         r1_data = take_r1_from_pair(data)
-        subsampled_data = remove_duplicates(r1_data ) 
+        out = remove_duplicates(r1_data ) 
             | mix(r1_data)
             | subsample
         
@@ -85,5 +85,6 @@ workflow {
                 file(row.bam_file), 
                 file("${row.bam_file}.crai")))
     bams.view()
-    preprocessBams(bams)
+    preprocessBams(bams) // | callHotspots
+
 }
