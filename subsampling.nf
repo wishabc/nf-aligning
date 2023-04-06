@@ -81,7 +81,7 @@ workflow {
     bams = Channel.fromPath(params.samples_file)
 			| splitCsv(header:true, sep:'\t')
 			| map(row -> tuple(
-                row.ag_id, 
+                row.uniq_id, 
                 file(row.bam_file), 
                 file("${row.bam_file}.crai")))
     data = preprocessBams(bams) 
