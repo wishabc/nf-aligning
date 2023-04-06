@@ -40,7 +40,8 @@ for read in infile:
     if read.rname != chr or read.pos != pos:
         if len(read_cache) > 0:
             outfile.write(rng.choice(read_cache))
-        print(flags)
+        if len(flags) > 1:
+            print(flags)
         read_cache = []
         flags = []
     read_cache.append(read)
