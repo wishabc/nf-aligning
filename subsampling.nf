@@ -39,7 +39,7 @@ process remove_duplicates {
     new_id = "${uniq_id}.dedupped"
     name = "${new_id}.bam"
     """
-    samtools -F 1024 -h ${bam_file} > ${name}
+    samtools view -F 1024 -h -b ${bam_file} > ${name}
     samtools index ${name}
     """
 }
