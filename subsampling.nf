@@ -64,6 +64,48 @@ process subsample {
     """
 }
 
+params.readlength = 36
+genome_file = file(params.genome_fasta_file)
+genome_prefix = "${genome_file.parent}/${genome_file.simpleName}"
+params.hotspots_dir = "/home/solexa/hotspot/"
+process spot_score {
+
+    // Impossible to use anywhere except Altius cluster
+    conda params.conda
+    module "modwt/1.0:kentutil/302:jdk/1.8.0_92:gcc/4.7.2:R/3.2.5:coreutils/8.25:atlas-lapack/3.10.2:preseq:/2.0.3:gsl/2.4"
+    publishDir "${params.outdir}/${uniq_id}"
+
+
+    input:
+        tuple val(uniq_id), path(bam_file), path(bam_file_index)
+
+    output:
+        tuple val(uniq_id), path("r1.*")
+
+    script:
+    renamed_input = "r1.${bam_file.extension}"
+    """
+    # workaround for hotspots1 naming scheme...
+	ln -s ${bam_file} ${renamed_input}
+	ln -s ${bam_file_index} ${renamed_input}.${bam_file_index.extension}
+    bash $moduleDir/bin/runhotspot.bash" \
+      "${params.hotspots_dir}" \
+      "./" \
+      "${bam_file}" \
+      "${genome_prefix}" \
+      "${params.readlength}" \
+      DNaseI
+
+    starch --header r1-both-passes/r1.hotspot.twopass.zscore.wig \
+      > r1.spots.starch
+
+    bash $moduleDir/bin/info.sh \
+      r1.spots.starch hotspot1 r1.spot.out \
+      > r1.hotspot.info
+    """
+}
+
+
 workflow preprocessBams {
     take:
         data
@@ -77,6 +119,7 @@ workflow preprocessBams {
         out
 }
 
+
 workflow {
     bams = Channel.fromPath(params.samples_file)
 			| splitCsv(header:true, sep:'\t')
@@ -86,6 +129,6 @@ workflow {
                 file("${row.bam_file}.crai")))
     data = preprocessBams(bams) 
     callHotspots(data) // For hotspot2
-    // spot_score(data) // make it work for hotspot1
+    spot_score(data) // make it work for hotspot1
 
 }
