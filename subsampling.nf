@@ -91,7 +91,7 @@ process spot_score {
 	ln -s ${bam_file_index} ${renamed_input}.${bam_file_index.extension}
     bash $moduleDir/bin/runhotspot.bash \
       "${params.hotspots_dir}" \
-      "./" \
+      "\$PWD" \
       "${bam_file}" \
       "${genome_prefix}" \
       ${params.chrominfo} \
@@ -108,11 +108,35 @@ process spot_score {
 }
 
 
+process filter_nuclear {
+  conda params.conda
+  tag "${uniq_id}"
+  scratch true
+
+  input:
+    tuple val(uniq_id), path(bam), path(bam_index)
+
+  output:
+    tuple val(uniq_id), path("${name}"), path("${name}.bai")
+
+  script:
+  name = "${uniq_id}.filtered.bam"
+  """
+  samtools view -b -F 512 ${bam} > filtered.bam
+  samtools index filtered.bam
+  cat "${params.nuclear_chroms}" \
+  | xargs samtools view -b filtered.bam > ${name}
+
+  samtools index ${name}
+  """
+}
+
+
 workflow preprocessBams {
     take:
         data
     main:
-        r1_data = take_r1_from_pair(data)
+        r1_data = take_r1_from_pair(data) | filter_nuclear
         out = remove_duplicates(r1_data) 
             | mix(r1_data)
             | subsample
@@ -130,7 +154,7 @@ workflow {
                 file(row.bam_file), 
                 file("${row.bam_file}.crai")))
     data = preprocessBams(bams) 
-    callHotspots(data) // For hotspot2
+    //callHotspots(data) // For hotspot2
     spot_score(data) // make it work for hotspot1
 
 }
