@@ -88,7 +88,7 @@ process spot_score {
     # workaround for hotspots1 naming scheme...
 	ln -s ${bam_file} ${renamed_input}
 	ln -s ${bam_file_index} ${renamed_input}.${bam_file_index.extension}
-    bash $moduleDir/bin/runhotspot.bash" \
+    bash $moduleDir/bin/runhotspot.bash \
       "${params.hotspots_dir}" \
       "./" \
       "${bam_file}" \
