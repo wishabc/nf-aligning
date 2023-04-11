@@ -92,7 +92,7 @@ process spot_score {
     bash $moduleDir/bin/runhotspot.bash \
       "${params.hotspots_dir}" \
       "\$PWD" \
-      "${bam_file}" \
+      "${renamed_input}" \
       "${genome_prefix}" \
       ${params.chrominfo} \
       "${params.readlength}" \
