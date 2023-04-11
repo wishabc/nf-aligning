@@ -67,7 +67,8 @@ process subsample {
 params.readlength = 36
 genome_file = file(params.genome_fasta_file)
 genome_prefix = "${genome_file.parent}/${genome_file.simpleName}"
-params.hotspots_dir = "/home/solexa/hotspot/"
+params.hotspots_dir = "/home/solexa/hotspot-hpc/hotspot-distr/"
+params.chrominfo = "home/solexa/stampipes-for-encode4-plus/data/annotations/GRCh38_no_alts.chromInfo.bed"
 process spot_score {
 
     // Impossible to use anywhere except Altius cluster
@@ -93,6 +94,7 @@ process spot_score {
       "./" \
       "${bam_file}" \
       "${genome_prefix}" \
+      ${params.chrominfo} \
       "${params.readlength}" \
       DNaseI
 

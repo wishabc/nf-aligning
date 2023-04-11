@@ -4,8 +4,9 @@ HOTSPOT_DISTR=$1
 OUTDIR=$2
 TAGS=$3
 GENOME=$4
-K=$5
-ASSAY=$6
+chromInfo=$5
+K=$6
+ASSAY=$7
 
 echo "Making SPOT in $OUTDIR"
 echo "TAGS: $TAGS"
@@ -34,7 +35,7 @@ fi
 
 echo "Creating $CONFIGOUT"
 
-chromFile=$(readlink -f "$GENOME.chromInfo.bed")
+chromFile=$(readlink -f "$5")
 mappableFile=$(readlink -f "$GENOME.K$K.mappable_only.bed")
 chkchr=$(awk 'NR==1{print $1}' < "$chromFile")
 
