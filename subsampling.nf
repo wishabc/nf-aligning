@@ -158,3 +158,46 @@ workflow {
     spot_score(data) // make it work for hotspot1
 
 }
+
+process percent_dup {
+    scratch true
+    conda params.conda
+    tag "${ag_id}"
+    publishDir "${params.outdir}/${ag_id}"
+
+    input:
+        val(ag_id), path(bam_file), path(bam_file_index)
+    
+    output:
+        val(ag_id), path(name)
+
+    script:
+    name = "${ag_id}.spotdups.txt"
+    """
+    picard RevertSam \
+      INPUT=${bam_file} \
+      OUTPUT=clear.bam \
+      VALIDATION_STRINGENCY=SILENT REMOVE_DUPLICATE_INFORMATION=true SORT_ORDER=coordinate \
+      RESTORE_ORIGINAL_QUALITIES=false REMOVE_ALIGNMENT_INFORMATION=false
+    picard MarkDuplicatesWithMateCigar \
+      INPUT=clear.bam \
+      METRICS_FILE=${name} \
+      OUTPUT=/dev/null \
+      ASSUME_SORTED=true \
+      MINIMUM_DISTANCE=300 \
+      VALIDATION_STRINGENCY=SILENT \
+      READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
+    """
+}
+
+// nextflow /script.nf -entry percentDup -profile Altius --samples_file <>
+workflow percentDup {
+    bams = Channel.fromPath(params.samples_file)
+			| splitCsv(header:true, sep:'\t')
+			| map(row -> tuple(
+                row.ag_id, 
+                file(row.bam_file), 
+                file("${row.bam_file}.crai")))
+            | percent_dup
+    
+}
