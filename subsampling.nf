@@ -163,6 +163,7 @@ process percent_dup {
     scratch true
     conda params.conda
     tag "${ag_id}"
+    cpus 2
     publishDir "${params.outdir}/${ag_id}"
 
     input:
@@ -174,8 +175,10 @@ process percent_dup {
     script:
     name = "${ag_id}.spotdups.txt"
     """
+    samtools sort -@${task.cpus} ${bam_file} > sorted.bam
+    samtools index sorted.bam
     picard RevertSam \
-      INPUT=${bam_file} \
+      INPUT=sorted.bam \
       OUTPUT=clear.bam \
       VALIDATION_STRINGENCY=SILENT REMOVE_DUPLICATE_INFORMATION=true SORT_ORDER=coordinate \
       RESTORE_ORIGINAL_QUALITIES=false REMOVE_ALIGNMENT_INFORMATION=false
