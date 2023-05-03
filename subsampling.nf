@@ -166,20 +166,19 @@ process percent_dup {
     publishDir "${params.outdir}/${ag_id}"
 
     input:
-        val(ag_id), path(bam), path(bam_index)
+        tuple val(ag_id), path(bam_file), path(bam_file_index)
     
     output:
-        val(ag_id), path(name)
+        tuple val(ag_id), path(name)
 
     script:
     name = "${ag_id}.spotdups.txt"
     """
     picard RevertSam \
-      INPUT=${bam} \
+      INPUT=${bam_file} \
       OUTPUT=clear.bam \
       VALIDATION_STRINGENCY=SILENT REMOVE_DUPLICATE_INFORMATION=true SORT_ORDER=coordinate \
       RESTORE_ORIGINAL_QUALITIES=false REMOVE_ALIGNMENT_INFORMATION=false
-    
     picard MarkDuplicatesWithMateCigar \
       INPUT=clear.bam \
       METRICS_FILE=${name} \
@@ -193,13 +192,12 @@ process percent_dup {
 
 // nextflow /script.nf -entry percentDup -profile Altius --samples_file <>
 workflow percentDup {
-    data = Channel.fromPath(params.samples_file)
-        .splitCsv(header:true, sep:'\t')
-        .map(row -> tuple(
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
             row.ag_id, 
             file(row.bam_file), 
-            file("${row.bam_file}.*ai")))
-    data.take(3).view()
-    percent_dup(data)
+            file("${row.bam_file}.crai")))
+        | percent_dup
     
 }
