@@ -179,6 +179,7 @@ process percent_dup {
       OUTPUT=clear.bam \
       VALIDATION_STRINGENCY=SILENT REMOVE_DUPLICATE_INFORMATION=true SORT_ORDER=coordinate \
       RESTORE_ORIGINAL_QUALITIES=false REMOVE_ALIGNMENT_INFORMATION=false
+    
     picard MarkDuplicatesWithMateCigar \
       INPUT=clear.bam \
       METRICS_FILE=${name} \
@@ -192,12 +193,13 @@ process percent_dup {
 
 // nextflow /script.nf -entry percentDup -profile Altius --samples_file <>
 workflow percentDup {
-    bams = Channel.fromPath(params.samples_file)
-			| splitCsv(header:true, sep:'\t')
-			| map(row -> tuple(
-                row.ag_id, 
-                file(row.bam_file), 
-                file("${row.bam_file}.crai")))
-            | percent_dup
+    data = Channel.fromPath(params.samples_file)
+        .splitCsv(header:true, sep:'\t')
+        .map(row -> tuple(
+            row.ag_id, 
+            file(row.bam_file), 
+            file("${row.bam_file}.crai")))
+    data.take(3).view()
+    percent_dup(data)
     
 }
