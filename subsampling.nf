@@ -166,7 +166,7 @@ process percent_dup {
     publishDir "${params.outdir}/${ag_id}"
 
     input:
-        val(ag_id), path(bam_file), path(bam_file_index)
+        val(ag_id), path(bam), path(bam_index)
     
     output:
         val(ag_id), path(name)
@@ -175,7 +175,7 @@ process percent_dup {
     name = "${ag_id}.spotdups.txt"
     """
     picard RevertSam \
-      INPUT=${bam_file} \
+      INPUT=${bam} \
       OUTPUT=clear.bam \
       VALIDATION_STRINGENCY=SILENT REMOVE_DUPLICATE_INFORMATION=true SORT_ORDER=coordinate \
       RESTORE_ORIGINAL_QUALITIES=false REMOVE_ALIGNMENT_INFORMATION=false
@@ -198,7 +198,7 @@ workflow percentDup {
         .map(row -> tuple(
             row.ag_id, 
             file(row.bam_file), 
-            file("${row.bam_file}.crai")))
+            file("${row.bam_file}.*ai")))
     data.take(3).view()
     percent_dup(data)
     
