@@ -75,6 +75,6 @@ workflow {
 	metadata = Channel
       .fromPath(params.samples_file)
       .splitCsv(header:true, sep:'\t')
-		  .map(row -> tuple( row.ag_id, row.bam_file, "${row.bam_file}.{crai,bai}"))
+		  .map(row -> tuple( row.ag_id, row.bam_file, "${row.bam_file}.crai"))
 	callHotspots(metadata)
 }
