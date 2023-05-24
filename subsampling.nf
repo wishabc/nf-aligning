@@ -64,7 +64,6 @@ process subsample {
     """
 }
 
-params.readlength = 36
 genome_file = file(params.genome_fasta_file)
 genome_prefix = "${genome_file.parent}/${genome_file.simpleName}"
 
