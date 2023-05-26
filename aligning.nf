@@ -271,7 +271,7 @@ process macs2 {
     tuple val(sample_id), path("macs2.${sample_id}*")
 
   script:
-  mode = is_paired ? 'BAMPE' : 'BAM'
+  mode = 'BAM'
   """
   gen_size=\$(cat ${params.chrom_sizes} | awk '{print \$2}' | paste -sd+ | bc)
   macs2 callpeak \
@@ -281,7 +281,7 @@ process macs2 {
     -g \$gen_size -p 0.01 \
     --shift 75 --extsize 150 \
     --nomodel -B --SPMR \
-    --keep-dup all --call-summits 2>"macs2.${sample_id}.err" || echo "MACS2 failed" >> "macs2.${sample_id}.err"
+    --keep-dup all --call-summits > "macs2.${sample_id}.err"
   """
 }
 process density_files {
