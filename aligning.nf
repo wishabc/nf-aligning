@@ -423,6 +423,14 @@ workflow {
     fastq_trimmed_paired = Channel
       .fromPath(params.samples_file)
       .splitCsv(header:true, sep:'\t')
-		  .map(row -> tuple( row.sample_id, row.reads1, row.reads2, row.type == 'paired'))
+		  .map(row -> tuple(row.sample_id, row.reads1, row.reads2, row.type == 'paired'))
     alignReads(set_key_for_group_tuple(fastq_trimmed_paired))
+}
+
+
+workflow doMacs2 {
+  Channel.fromPath(params.samples_file)
+      | splitCsv(header:true, sep:'\t')
+      | map(row -> tuple(row.sample_id, row.bam_file, "${row.bam_file}.crai", row.type == 'paired'))
+      | macs2
 }
