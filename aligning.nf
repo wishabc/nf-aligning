@@ -428,9 +428,32 @@ workflow {
 }
 
 
+process convert_to_bam {
+  tag "${sample_id}"
+  publishDir "${params.outdir}/${sample_id}/stats"
+  container "${params.container}"
+  scratch true
+
+  when:
+    params.do_macs
+
+  input:
+    tuple val(sample_id), path(cram), path(crai), val(is_paired)
+
+  output:
+    tuple val(sample_id), path(bam), path("${bam}.bai"), val(is_paired)
+
+  script:
+  bam = cram.baseName + '.bam'
+  """
+  samtools view ${cram} -b -h > ${bam}
+  samtools index ${bam}
+  """
+}
 workflow doMacs2 {
   Channel.fromPath(params.samples_file)
       | splitCsv(header:true, sep:'\t')
       | map(row -> tuple(row.ag_id, row.bam_file, "${row.bam_file}.crai", row.type == 'paired'))
+      | convert_to_bam
       | macs2
 }
