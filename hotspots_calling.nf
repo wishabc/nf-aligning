@@ -7,16 +7,15 @@ include { get_container } from "./aligning"
 process call_hotspots {
 	tag "${id}"
 	label 'high_mem'
-	publishDir "${params.outdir}/${id}", pattern: "${name}", mode: 'copy'
-	publishDir "${params.outdir}/${id}", pattern: "nuclear.SPOT.txt", mode: 'copy', saveAs: { "${id}.SPOT.txt" } 
-	publishDir "${params.outdir}/${id}", pattern: "nuclear.cleavage.total", mode: 'copy', saveAs: { "${id}.cleavage.total" }
-	publishDir "${params.outdir}/${id}", pattern: "nuclear.density.bw", mode: 'copy', saveAs: { "${id}.density.bw" }
-	publishDir "${params.outdir}/${id}", pattern: "nuclear.hotspot2.info", mode: 'copy', saveAs: { "${id}.hotspot2.info" }
-	publishDir "${params.outdir}/${id}", pattern: "nuclear.cutcounts.starch", mode: 'copy', saveAs: { "${id}.cutcounts.starch" }
+	publishDir "${params.outdir}/${id}", pattern: "${name}"
+	publishDir "${params.outdir}/${id}", pattern: "nuclear.SPOT.txt", saveAs: { "${id}.SPOT.txt" } 
+	publishDir "${params.outdir}/${id}", pattern: "nuclear.cleavage.total", saveAs: { "${id}.cleavage.total" }
+	publishDir "${params.outdir}/${id}", pattern: "nuclear.density.bw", saveAs: { "${id}.density.bw" }
+	publishDir "${params.outdir}/${id}", pattern: "nuclear.hotspot2.info", saveAs: { "${id}.hotspot2.info" }
+	publishDir "${params.outdir}/${id}", pattern: "nuclear.cutcounts.starch", saveAs: { "${id}.cutcounts.starch" }
 
-    	//container "${params.container}"
+	//container "${params.container}"
 	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
-	errorStrategy 'ignore'
 	module "modwt/1.0:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:samtools/1.3:hotspot2/2.1.1"
 
 	input:
