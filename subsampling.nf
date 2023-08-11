@@ -211,6 +211,7 @@ process subsample_with_pairs {
     conda params.conda
     tag "${ag_id}"
     cpus 2
+    scratch true
 
     input:
         tuple val(ag_id), path(cram_file), path(cram_file_index), val(frac)
@@ -221,10 +222,10 @@ process subsample_with_pairs {
     script:
     name = "${ag_id}.subsampled.bam"
     """
-    samtools view ${cram_file} -h -b \
+    samtools view ${cram_file} -h \
         --subsample-seed 42 \
-        --subsample ${frac} \
-        | samtools sort -@${task.cpus} > ${name}
+        --subsample ${frac} > file.bam
+    samtools sort -@${task.cpus} file.bam > ${name}
     samtools index ${name}
     """
 }
