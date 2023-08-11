@@ -224,6 +224,7 @@ process subsample_with_pairs {
     """
     samtools view ${cram_file} -h \
         --subsample-seed 42 \
+        --reference ${params.genome_fasta_file} \
         --subsample ${frac} > file.bam
     samtools sort -@${task.cpus} file.bam > ${name}
     samtools index ${name}
@@ -231,6 +232,8 @@ process subsample_with_pairs {
 }
 
 workflow subsampleTest {
+    genome_fasta_file = "/net/seq/data/genomes/human/GRCh38/noalts/GRCh38_no_alts.fa"
+
     bams = Channel.fromPath("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/alignments_for_unresolved.tsv")
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(row.ag_id, file(row.filtered_alignments_bam), file(row.bam_index), row.frac))
