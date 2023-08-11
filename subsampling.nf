@@ -221,7 +221,9 @@ process subsample_with_pairs {
     script:
     name = "${ag_id}.subsampled.bam"
     """
-    samtools view ${cram_file} -h -b -s 42,${frac} \
+    samtools view ${cram_file} -h -b \
+        --subsample-seed 42 \
+        --subsample ${frac} \
         | samtools sort -@${task.cpus} > ${name}
     samtools index ${name}
     """
