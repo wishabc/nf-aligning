@@ -59,7 +59,7 @@ process subsample {
     name = "${uniq_id}.subsampled.bam"
     """
     python3 $moduleDir/bin/random_sample.py ${bam_file} ${name} \
-        `samtools view -c ${bam_file}` 5000000
+        `samtools view -c ${bam_file}` ${params.subsampled_count}
     samtools index ${name}
     """
 }
@@ -201,4 +201,39 @@ workflow percentDup {
             file("${row.bam_file}.crai")))
         | percent_dup
     
+}
+
+
+// DEFUNC 
+
+// Assume paired end
+process subsample_with_pairs {
+    conda params.conda
+    tag "${ag_id}"
+    cpus 2
+
+    input:
+        tuple val(ag_id), path(cram_file), path(cram_file_index), val(frac)
+    
+    output:
+        tuple val(ag_id), path(name), path("${name}.bai")
+
+    script:
+    name = "${ag_id}.subsampled.bam"
+    """
+    samtools view ${cram_file} -h -b -s 42,${frac} \
+        | samtools sort -@${task.cpus} > ${name}
+    samtools index ${name}
+    """
+}
+
+workflow subsampleTest {
+    bams = Channel.fromPath("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/alignments_for_unresolved.tsv")
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, file(row.filtered_alignments_bam), file(row.bam_index), row.frac))
+        | subsample_with_pairs
+    callHotspots(bams)
+    bams 
+        | preprocessBams
+        | spot_score
 }
