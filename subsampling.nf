@@ -212,6 +212,7 @@ process subsample_with_pairs {
     tag "${ag_id}"
     cpus 2
     scratch true
+    publishDir "${params.outdir}/${ag_id}"
 
     input:
         tuple val(ag_id), path(cram_file), path(cram_file_index), val(frac)
