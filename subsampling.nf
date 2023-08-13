@@ -212,7 +212,7 @@ process subsample_with_pairs {
     tag "${ag_id}"
     cpus 2
     scratch true
-    publishDir "${params.outdir}/${ag_id}", saveAs: "${ag_id}.subsampled_pairs.bam"
+    publishDir "${params.outdir}/${ag_id}"
 
     input:
         tuple val(ag_id), path(cram_file), path(cram_file_index), val(frac)
@@ -221,7 +221,7 @@ process subsample_with_pairs {
         tuple val(ag_id), path(name), path("${name}.bai")
 
     script:
-    name = "${ag_id}.subsampled.bam"
+    name = "${ag_id}.subsampled_pairs.bam"
     """
     samtools view ${cram_file} -h \
         --subsample-seed 42 \
