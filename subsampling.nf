@@ -220,6 +220,9 @@ process subsample_with_pairs {
     output:
         tuple val(ag_id), path(name), path("${name}.bai")
 
+    when:
+        frac <= 1
+
     script:
     name = "${ag_id}.subsampled_pairs.bam"
     """
@@ -235,7 +238,7 @@ process subsample_with_pairs {
 workflow subsampleTest {
     genome_fasta_file = "/net/seq/data/genomes/human/GRCh38/noalts/GRCh38_no_alts.fa"
 
-    bams = Channel.fromPath("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/alignments_for_unresolved.tsv")
+    bams = Channel.fromPath("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/alignments_for_not_unresolved.tsv")
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(row.ag_id, file(row.filtered_alignments_bam), file(row.bam_index), row.frac))
         | subsample_with_pairs
