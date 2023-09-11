@@ -243,7 +243,7 @@ workflow subsampleTest {
         | map(row -> tuple(row.ag_id, file(row.filtered_alignments_bam), file(row.bam_index), row.frac.toFloat()))
         | subsample_with_pairs
     callHotspots(bams)
-    bams 
-        | preprocessBams
-        | spot_score
+    // bams 
+    //     | preprocessBams
+    //     | spot_score
 }
