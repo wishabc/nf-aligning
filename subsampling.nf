@@ -134,10 +134,10 @@ workflow preprocessBams {
     take:
         data
     main:
-        r1_data = take_r1_from_pair(data) | filter_nuclear
-        out = remove_duplicates(r1_data) 
-            | mix(r1_data)
-            | subsample
+        out = take_r1_from_pair(data) | filter_nuclear | subsample
+        //  = remove_duplicates(r1_data) 
+        //     | mix(r1_data)
+            
         
     emit:
         out
