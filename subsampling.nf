@@ -220,9 +220,6 @@ process subsample_with_pairs {
     output:
         tuple val(ag_id), path(name), path("${name}.bai")
 
-    when:
-        frac <= 1
-
     script:
     name = "${ag_id}.subsampled_pairs.bam"
     """
