@@ -197,8 +197,7 @@ workflow percentDup {
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.ag_id, 
-            file(row.bam_file), 
-            file("${row.bam_file}.crai")))
+            file(row.filtered_alignments_bam), file(row.bam_index)))
         | percent_dup
     
 }
