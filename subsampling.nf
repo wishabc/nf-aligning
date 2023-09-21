@@ -176,10 +176,15 @@ process percent_dup {
     samtools sort -@${task.cpus} ${bam_file} > sorted.bam
     samtools index sorted.bam
     picard RevertSam \
-      INPUT=sorted.bam \
-      OUTPUT=clear.bam \
-      VALIDATION_STRINGENCY=SILENT REMOVE_DUPLICATE_INFORMATION=true SORT_ORDER=coordinate \
-      RESTORE_ORIGINAL_QUALITIES=false REMOVE_ALIGNMENT_INFORMATION=false
+        INPUT=sorted.bam \
+        OUTPUT=clear.bam \
+        RESTORE_HARDCLIPS=false \
+        VALIDATION_STRINGENCY=SILENT \
+        REMOVE_DUPLICATE_INFORMATION=true\
+        SORT_ORDER=coordinate \
+        RESTORE_ORIGINAL_QUALITIES=false \
+        REMOVE_ALIGNMENT_INFORMATION=false
+
     picard MarkDuplicatesWithMateCigar \
       INPUT=clear.bam \
       METRICS_FILE=${name} \
