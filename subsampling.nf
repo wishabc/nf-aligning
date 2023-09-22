@@ -196,6 +196,25 @@ process percent_dup {
     """
 }
 
+process extract_perc_dup {
+    tag "${ag_id}"
+    publishDir "${params.outdir}/${ag_id}"
+
+    input:
+        tuple val(ag_id), path(picard_log)
+    
+    output:
+        tuple val(ag_id), path(name)
+
+    script:
+    name = "${ag_id}.percent_dup.txt"
+    """
+    grep -A 1 "PERCENT_DUPLICATION" ${picard_log} \
+        | awk -F'\t' '{print $(NF-1)}' \
+        | tail -n +2 > ${name}
+    """
+}
+
 // nextflow /script.nf -entry percentDup -profile Altius --samples_file <>
 workflow percentDup {
     Channel.fromPath(params.samples_file)
@@ -204,6 +223,7 @@ workflow percentDup {
             row.ag_id, 
             file(row.filtered_alignments_bam), file(row.bam_index)))
         | percent_dup
+        | extract_perc_dup
     
 }
 
