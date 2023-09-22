@@ -210,7 +210,7 @@ process extract_perc_dup {
     name = "${ag_id}.percent_dup.txt"
     """
     grep -A 1 "PERCENT_DUPLICATION" ${picard_log} \
-        | awk -F'\t' '{print $(NF-1)}' \
+        | awk -F'\t' '{print \$(NF-1)}' \
         | tail -n +2 > ${name}
     """
 }
