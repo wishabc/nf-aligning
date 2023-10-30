@@ -248,8 +248,6 @@ process normalize_density {
         > tmp.wig
 
     wigToBigWig -clip tmp.wig ${params.chrom_sizes} ${name}
-
-    rm tmp.wig
     """  
 }
 
