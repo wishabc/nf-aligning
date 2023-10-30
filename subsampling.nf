@@ -233,8 +233,8 @@ process normalize_density {
     """
     unstarch ${density_starch} \
         | awk \
-            -v allcounts=$(samtools view -c ${filtered_bam}) \
-            -v extranuclear_counts=$(samtools view -c "${filtered_bam}" chrM chrC) \
+            -v allcounts=\$(samtools view -c ${filtered_bam}) \
+            -v extranuclear_counts=\$(samtools view -c "${filtered_bam}" chrM chrC) \
             -v scale=${scale} \
             -v OFS='\t' \
                 'BEGIN{ tagcount=allcounts-extranuclear_counts }
