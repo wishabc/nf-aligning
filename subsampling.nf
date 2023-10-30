@@ -233,14 +233,16 @@ process normalize_density {
     scale = 1_000_000
     name = "${ag_id}.normalized.density.bw"
     """
-    unstarch ${density_starch} \
+    bigWigToBedGraph ${density_starch} tmp.bedGraph
+
+    cat tmp.bedGraph \
         | awk \
             -v allcounts=\$(samtools view -c ${filtered_bam}) \
             -v extranuclear_counts=\$(samtools view -c "${filtered_bam}" chrM chrC) \
             -v scale=${scale} \
             -v OFS='\t' \
                 'BEGIN{ tagcount=allcounts-extranuclear_counts }
-                { print \$1,\$2,\$3,\$4,(\$5/tagcount)*scale }' \
+                { print \$1,\$2,\$3,${ag_id},(\$5/tagcount)*scale }' \
         | awk \
             -v "binI=${bin_size}" \
             -f "$moduleDir/bin/bedToWig.awk" \
