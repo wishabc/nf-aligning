@@ -217,7 +217,6 @@ process extract_perc_dup {
 
 
 process normalize_density {
-    scratch true
     tag "${ag_id}"
     publishDir "${params.outdir}/${ag_id}"
     conda params.conda
@@ -238,7 +237,7 @@ process normalize_density {
     cat tmp.bedGraph \
         | awk \
             -v allcounts=\$(samtools view -c ${filtered_bam}) \
-            -v extranuclear_counts=\$(samtools view -c "${filtered_bam}" chrM) \
+            -v extranuclear_counts=\$(samtools view -c "${filtered_bam}" chrM chrC) \
             -v scale=${scale} \
             -v OFS='\t' \
                 'BEGIN{ tagcount=allcounts-extranuclear_counts } \
