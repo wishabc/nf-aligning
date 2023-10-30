@@ -215,6 +215,41 @@ process extract_perc_dup {
     """
 }
 
+
+process normalize_density {
+
+    scratch true
+
+    input:
+        tuple val(ag_id), path(density_starch), path(filtered_bam), path(bam_file_index)
+    
+    output:
+        tuple val(ag_id), path(name)
+    
+    script:
+    bin_size = 20
+    scale = 1_000_000
+    name = "${ag_id}.normalized.density.bw"
+    """
+    unstarch ${density_starch} \
+        | awk \
+            -v allcounts=$(samtools view -c ${filtered_bam}) \
+            -v extranuclear_counts=$(samtools view -c "${filtered_bam}" chrM chrC) \
+            -v scale=${scale} \
+            -v OFS='\t' \
+                'BEGIN{ tagcount=allcounts-extranuclear_counts }
+                { print \$1,\$2,\$3,\$4,(\$5/tagcount)*scale }' \
+        | awk \
+            -v "binI=${bin_size}" \
+            -f "$moduleDir/bin/bedToWig.awk" \
+        > tmp.wig
+
+    wigToBigWig -clip tmp.wig ${params.chrom_sizes} ${name}
+
+    rm tmp.wig
+    """  
+}
+
 // nextflow /script.nf -entry percentDup -profile Altius --samples_file <>
 workflow percentDup {
     Channel.fromPath(params.samples_file)
@@ -229,7 +264,19 @@ workflow percentDup {
 
 
 // DEFUNC 
-
+workflow normalizeDensity {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> row.ag_id)
+        | map(it -> tuple(
+            it, 
+            file("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/downsample/output/${it}/${it}.density.bw"), 
+            file("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/downsample/output/${it}/${it}.subsampled_pairs.bam"), 
+            file("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/downsample/output/${it}/${it}.subsampled_pairs.bam.bai")
+            )
+        )
+        | normalize_density
+}
 // Assume paired end
 process subsample_with_pairs {
     conda params.conda
