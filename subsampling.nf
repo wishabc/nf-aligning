@@ -217,8 +217,10 @@ process extract_perc_dup {
 
 
 process normalize_density {
-
     scratch true
+    tag "${ag_id}"
+    publishDir "${params.outdir}/${ag_id}"
+    conda params.conda
 
     input:
         tuple val(ag_id), path(density_starch), path(filtered_bam), path(bam_file_index)
