@@ -238,7 +238,7 @@ process normalize_density {
     cat tmp.bedGraph \
         | awk \
             -v allcounts=\$(samtools view -c ${filtered_bam}) \
-            -v extranuclear_counts=\$(samtools view -c "${filtered_bam}" chrM chrC) \
+            -v extranuclear_counts=\$(samtools view -c "${filtered_bam}" chrM) \
             -v scale=${scale} \
             -v OFS='\t' \
                 'BEGIN{ tagcount=allcounts-extranuclear_counts } \
