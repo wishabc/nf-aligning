@@ -241,7 +241,7 @@ process normalize_density {
             -v extranuclear_counts=\$(samtools view -c "${filtered_bam}" chrM chrC) \
             -v scale=${scale} \
             -v OFS='\t' \
-                'BEGIN{ tagcount=allcounts-extranuclear_counts }
+                'BEGIN{ tagcount=allcounts-extranuclear_counts } \
                 { print \$1,\$2,\$3,${ag_id},(\$5/tagcount)*scale }' \
         | awk \
             -v "binI=${bin_size}" \
