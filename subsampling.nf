@@ -241,8 +241,8 @@ process normalize_density {
             -v scale=${scale} \
             -v OFS='\t' \
                 'BEGIN{ tagcount=allcounts-extranuclear_counts } \
-                { print \$1,\$2,\$3,${ag_id},(\$4/tagcount)*scale }' \
-        | awk \
+                { print \$1,\$2,\$3,${ag_id},(\$4/tagcount)*scale }' > tmp.bed
+    cat tmp.bed | awk \
             -v "binI=${bin_size}" \
             -f "$moduleDir/bin/bedToWig.awk" \
         > tmp.wig
