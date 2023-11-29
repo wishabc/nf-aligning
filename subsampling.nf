@@ -272,12 +272,11 @@ workflow normalizeDensity {
     // FIXME: add density file path to samples_file
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(get_density_path(row.filtered_alignments_bam), file(row.filtered_alignments_bam), file(row.bam_index)))
-        | map(it -> tuple(
-            it, 
-            file("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/downsample/output/${it}/${it}.density.bw"), 
-            file("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/downsample/output/${it}/${it}.subsampled_pairs.bam"), 
-            file("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/downsample/output/${it}/${it}.subsampled_pairs.bam.bai")
+        | map(row -> tuple(
+            row.ag_id, 
+            file(get_density_path(row.filtered_alignments_bam)),
+            file(row.filtered_alignments_bam),
+            file(row.bam_index)
             )
         )
         | normalize_density
