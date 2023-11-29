@@ -263,12 +263,16 @@ workflow percentDup {
     
 }
 
+def get_density_path(file_path) {
+    file_path.replace(".subsampled_pairs.bam", ".density.bw")
+}
 
 // DEFUNC 
 workflow normalizeDensity {
+    // FIXME: add density file path to samples_file
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> row.ag_id)
+        | map(row -> tuple(row.ag_id, file(get_density_path(row.filtered_alignments_bam), file(row.filtered_alignments_bam), file(row.bam_index)))
         | map(it -> tuple(
             it, 
             file("/net/seq/data2/projects/sabramov/SuperIndex/dnase_peak_density_analysis/downsample/output/${it}/${it}.density.bw"), 
@@ -305,8 +309,6 @@ process subsample_with_pairs {
 }
 
 workflow subsampleTest {
-    genome_fasta_file = "/net/seq/data/genomes/human/GRCh38/noalts/GRCh38_no_alts.fa"
-
     bams = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(row.ag_id, file(row.filtered_alignments_bam), file(row.bam_index), row.frac.toFloat()))
