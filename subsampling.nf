@@ -25,24 +25,24 @@ process take_r1_from_pair {
     
 }
 
-process remove_duplicates {
-    tag "${uniq_id}"
-    conda params.conda
+// process remove_duplicates {
+//     tag "${uniq_id}"
+//     conda params.conda
 
-    input:
-        tuple val(uniq_id), path(bam_file), path(bam_file_index)
+//     input:
+//         tuple val(uniq_id), path(bam_file), path(bam_file_index)
     
-    output:
-        tuple val(new_id), path(name), path("${name}.bai")
+//     output:
+//         tuple val(new_id), path(name), path("${name}.bai")
 
-    script:
-    new_id = "${uniq_id}.dedupped"
-    name = "${new_id}.bam"
-    """
-    samtools view -F 1024 -h -b ${bam_file} > ${name}
-    samtools index ${name}
-    """
-}
+//     script:
+//     new_id = "${uniq_id}.dedupped"
+//     name = "${new_id}.bam"
+//     """
+//     samtools view -F 1024 -h -b ${bam_file} > ${name}
+//     samtools index ${name}
+//     """
+// }
 
 process subsample {
     tag "${uniq_id}"
@@ -64,9 +64,6 @@ process subsample {
     """
 }
 
-genome_file = file(params.genome_fasta_file)
-genome_prefix = "${genome_file.parent}/${genome_file.simpleName}"
-
 process spot_score {
 
     // Impossible to use anywhere except Altius cluster
@@ -83,6 +80,9 @@ process spot_score {
 
     script:
     renamed_input = "r1.${bam_file.extension}"
+    genome_file = file(params.genome_fasta_file)
+    genome_prefix = "${genome_file.parent}/${genome_file.simpleName}"
+
     """
     # workaround for hotspots1 naming scheme...
 	ln -s ${bam_file} ${renamed_input}
@@ -120,10 +120,8 @@ process filter_nuclear {
   script:
   name = "${uniq_id}.filtered.bam"
   """
-  samtools view -b -F 512 ${bam} > filtered.bam
-  samtools index filtered.bam
   cat "${params.nuclear_chroms}" \
-  | xargs samtools view -b filtered.bam > ${name}
+    | xargs samtools view -F 4 -b ${bam} > ${name}
 
   samtools index ${name}
   """
@@ -136,8 +134,7 @@ workflow preprocessBams {
     main:
         out = take_r1_from_pair(data) | filter_nuclear | subsample
         //  = remove_duplicates(r1_data) 
-        //     | mix(r1_data)
-            
+        //     | mix(r1_data)      
         
     emit:
         out
@@ -151,10 +148,8 @@ workflow {
                 row.ag_id, 
                 file(row.bam_file), 
                 file("${row.bam_file}.crai")))
-    data = preprocessBams(bams) 
-    //callHotspots(data) // For hotspot2
-    spot_score(data) // make it work for hotspot1
-
+            | preprocessBams
+            | spot_score
 }
 
 process percent_dup {
@@ -168,10 +163,11 @@ process percent_dup {
         tuple val(ag_id), path(bam_file), path(bam_file_index)
     
     output:
-        tuple val(ag_id), path(name)
+        tuple val(ag_id), path(name), path(perc_dup)
 
     script:
     name = "${ag_id}.spotdups.txt"
+    perc_dup = "${ag_id}.percent_dup.txt"
     """
     samtools sort -@${task.cpus} ${bam_file} > sorted.bam
     samtools index sorted.bam
@@ -186,35 +182,83 @@ process percent_dup {
         REMOVE_ALIGNMENT_INFORMATION=false
 
     picard MarkDuplicatesWithMateCigar \
-      INPUT=clear.bam \
-      METRICS_FILE=${name} \
-      OUTPUT=/dev/null \
-      ASSUME_SORTED=true \
-      MINIMUM_DISTANCE=300 \
-      VALIDATION_STRINGENCY=SILENT \
-      READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
+        INPUT=clear.bam \
+        METRICS_FILE=${name} \
+        OUTPUT=/dev/null \
+        ASSUME_SORTED=true \
+        MINIMUM_DISTANCE=300 \
+        VALIDATION_STRINGENCY=SILENT \
+        READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
+    
+    grep -A 1 "PERCENT_DUPLICATION" ${name} \
+        | awk -F'\t' '{print \$(NF-1)}' \
+        | tail -n +2 > ${perc_dup}
     """
 }
 
-process extract_perc_dup {
+
+process subsample_with_pairs {
+    conda params.conda
     tag "${ag_id}"
+    cpus 2
+    scratch true
     publishDir "${params.outdir}/${ag_id}"
 
     input:
-        tuple val(ag_id), path(picard_log)
+        tuple val(ag_id), path(cram_file), path(cram_file_index)
     
     output:
-        tuple val(ag_id), path(name)
+        tuple val(ag_id), path(name), path("${name}.bai")
 
     script:
-    name = "${ag_id}.percent_dup.txt"
+    name = "${ag_id}.subsampled_pairs.bam"
     """
-    grep -A 1 "PERCENT_DUPLICATION" ${picard_log} \
-        | awk -F'\t' '{print \$(NF-1)}' \
-        | tail -n +2 > ${name}
+    total_reads=\$(samtools view -c "${cram_file}")
+    frac=\$(echo "scale=2; if (\$total_reads < ${params.subsample_depth}) 1 else ${params.subsample_depth}/\$total_reads" | bc)
+
+    samtools view ${cram_file} -h \
+        --subsample-seed 42 \
+        --reference ${params.genome_fasta_file} \
+        --subsample \$frac \
+        | samtools sort -@${task.cpus} > ${name}
+    samtools index ${name}
     """
 }
+params.subsample_depth = 30000000
 
+workflow subsampleTest {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, file(row.bam_file), file(row.bam_index)))
+        | filter_nuclear
+        | subsample_with_pairs
+        | percent_dup
+
+    subsample_with_pairs.out
+        | callHotspots
+    // bams 
+    //     | preprocessBams
+    //     | spot_score
+}
+
+
+// DEFUNC 
+def get_density_path(file_path) {
+    file_path.replace(".subsampled_pairs.bam", ".density.bw")
+}
+workflow normalizeDensity {
+    // FIXME: add density file path to samples_file
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.ag_id, 
+            file(get_density_path(row.filtered_alignments_bam)),
+            file(row.filtered_alignments_bam),
+            file(row.bam_index)
+            )
+        )
+        | normalize_density
+}
 
 process normalize_density {
     tag "${ag_id}"
@@ -249,71 +293,4 @@ process normalize_density {
 
     wigToBigWig -clip tmp.wig ${params.chrom_sizes} ${name}
     """  
-}
-
-// nextflow /script.nf -entry percentDup -profile Altius --samples_file <>
-workflow percentDup {
-    Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(
-            row.ag_id, 
-            file(row.filtered_alignments_bam), file(row.bam_index)))
-        | percent_dup
-        | extract_perc_dup
-    
-}
-
-def get_density_path(file_path) {
-    file_path.replace(".subsampled_pairs.bam", ".density.bw")
-}
-
-// DEFUNC 
-workflow normalizeDensity {
-    // FIXME: add density file path to samples_file
-    Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(
-            row.ag_id, 
-            file(get_density_path(row.filtered_alignments_bam)),
-            file(row.filtered_alignments_bam),
-            file(row.bam_index)
-            )
-        )
-        | normalize_density
-}
-// Assume paired end
-process subsample_with_pairs {
-    conda params.conda
-    tag "${ag_id}"
-    cpus 2
-    scratch true
-    publishDir "${params.outdir}/${ag_id}"
-
-    input:
-        tuple val(ag_id), path(cram_file), path(cram_file_index), val(frac)
-    
-    output:
-        tuple val(ag_id), path(name), path("${name}.bai")
-
-    script:
-    name = "${ag_id}.subsampled_pairs.bam"
-    """
-    samtools view ${cram_file} -h \
-        --subsample-seed 42 \
-        --reference ${params.genome_fasta_file} \
-        --subsample ${frac} > file.bam
-    samtools sort -@${task.cpus} file.bam > ${name}
-    samtools index ${name}
-    """
-}
-
-workflow subsampleTest {
-    bams = Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.filtered_alignments_bam), file(row.bam_index), row.frac.toFloat()))
-        | subsample_with_pairs
-    callHotspots(bams)
-    // bams 
-    //     | preprocessBams
-    //     | spot_score
 }

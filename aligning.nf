@@ -312,12 +312,17 @@ process density_files {
   
   unstarch "${params.density_buckets}" \
     | bedmap --faster --echo --count --delim "\t" - sample.bed \
-    | awk -v binI=${params.density_step_size} -v win="${params.density_window_width}" \
-        'BEGIN{ halfBin=binI/2; shiftFactor=win-halfBin } { print \$1 "\t" \$2 + shiftFactor "\t" \$3-shiftFactor "\tid\t" i \$4}' \
+    | awk -v OFS="\t" \
+        -v binI=${params.density_step_size} \
+        -v win="${params.density_window_width}" \
+        'BEGIN{ halfBin=binI/2; shiftFactor=win-halfBin } { 
+            print \$1,\$2+shiftFactor,\$3-shiftFactor,"id",\$4}' \
     | starch - \
     > "${name}"
     
-  unstarch "${name}" | awk -v binI="${params.density_step_size}" -f "${moduleDir}/bin/bedToWig.awk" > density.wig
+  unstarch "${name}" \
+    | awk -v binI="${params.density_step_size}" \
+        -f "${moduleDir}/bin/bedToWig.awk" > density.wig
   wigToBigWig -clip density.wig "${params.chrom_sizes}" ${sample_id}.density.bw
   
   unstarch "${name}" | bgzip -c > ${sample_id}.density.bed.bgz
