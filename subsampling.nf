@@ -214,7 +214,7 @@ process subsample_with_pairs {
     name = "${ag_id}.subsampled_pairs.bam"
     """
     total_reads=\$(samtools view -c "${cram_file}")
-    frac=\$(echo "scale=2; if (\$total_reads < ${params.subsample_depth}) 1 else ${params.subsample_depth}/\$total_reads" | bc)
+    frac=\$(echo "scale=4; if (\$total_reads <= ${params.subsample_depth}) 1 else ${params.subsample_depth}/\$total_reads" | bc)
 
     samtools view ${cram_file} -h \
         --subsample-seed 42 \
