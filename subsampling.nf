@@ -241,6 +241,14 @@ workflow subsampleTest {
     //     | spot_score
 }
 
+workflow filterAndCallHotspots {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, file(row.bam_file), file(row.bam_index)))
+        | filter_nuclear
+        | callHotspots
+}
+
 
 // DEFUNC 
 def get_density_path(file_path) {
