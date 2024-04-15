@@ -146,8 +146,8 @@ workflow {
 			| splitCsv(header:true, sep:'\t')
 			| map(row -> tuple(
                 row.ag_id, 
-                file(row.bam_file), 
-                file("${row.bam_file}.crai")))
+                file(row.cram_file), 
+                file("${row.cram_file}.crai")))
             | preprocessBams
             | spot_score
 }
@@ -227,9 +227,9 @@ process subsample_with_pairs {
     samtools index ${name}
     """
 }
-params.subsample_depth = 30000000
 
 workflow subsampleTest {
+    params.subsample_depth = 30000000
     subsampled_bams = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(row.ag_id, file(row.bam_file), file(row.bam_index)))
