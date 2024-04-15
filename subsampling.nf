@@ -208,14 +208,17 @@ process subsample_with_pairs {
         tuple val(ag_id), path(cram_file), path(cram_file_index)
     
     output:
-        tuple val(ag_id), path(name), path("${name}.bai")
+        tuple val(ag_id), path(name), path("${name}.bai"), path(info)
 
     script:
     name = "${ag_id}.subsampled_pairs.bam"
+    info = "${ag_id}.subsampling_info.txt"
     """
     total_reads=\$(samtools view -c "${cram_file}")
     frac=\$(echo "scale=4; if (\$total_reads <= ${params.subsample_depth}) 1 else ${params.subsample_depth}/\$total_reads" | bc)
-
+    
+    echo "Total_reads, sampling fraction" > ${info}
+    echo "\$total_reads \$frac" >> ${info}
     samtools view ${cram_file} -h \
         --subsample-seed 42 \
         --reference ${params.genome_fasta_file} \
@@ -227,15 +230,14 @@ process subsample_with_pairs {
 params.subsample_depth = 30000000
 
 workflow subsampleTest {
-    Channel.fromPath(params.samples_file)
+    subsampled_bams = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(row.ag_id, file(row.bam_file), file(row.bam_index)))
         | filter_nuclear
         | subsample_with_pairs
-        | percent_dup
+        | map(it -> tuple(it[0], it[1], it[2]))
+        | (percent_dup & callHotspots)
 
-    subsample_with_pairs.out
-        | callHotspots
     // bams 
     //     | preprocessBams
     //     | spot_score
