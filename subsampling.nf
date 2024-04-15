@@ -217,8 +217,8 @@ process subsample_with_pairs {
     total_reads=\$(samtools view -c "${cram_file}")
     frac=\$(echo "scale=4; if (\$total_reads <= ${params.subsample_depth}) 1 else ${params.subsample_depth}/\$total_reads" | bc)
     
-    echo "Total_reads, sampling fraction" > ${info}
-    echo "\$total_reads \$frac" >> ${info}
+    echo -e "Total_reads\tsampling_fraction" > ${info}
+    echo -e "\$total_reads\t\$frac" >> ${info}
     samtools view ${cram_file} -h \
         --subsample-seed 42 \
         --reference ${params.genome_fasta_file} \
