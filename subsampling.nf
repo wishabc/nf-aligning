@@ -22,27 +22,8 @@ process take_r1_from_pair {
         | samtools sort -@${task.cpus} -O bam - > ${name}
 	samtools index ${name}
     """
-    
 }
 
-// process remove_duplicates {
-//     tag "${uniq_id}"
-//     conda params.conda
-
-//     input:
-//         tuple val(uniq_id), path(bam_file), path(bam_file_index)
-    
-//     output:
-//         tuple val(new_id), path(name), path("${name}.bai")
-
-//     script:
-//     new_id = "${uniq_id}.dedupped"
-//     name = "${new_id}.bam"
-//     """
-//     samtools view -F 1024 -h -b ${bam_file} > ${name}
-//     samtools index ${name}
-//     """
-// }
 
 process subsample {
     tag "${uniq_id}"
@@ -59,7 +40,7 @@ process subsample {
     name = "${uniq_id}.subsampled.bam"
     """
     python3 $moduleDir/bin/random_sample.py ${bam_file} ${name} \
-        `samtools view -c ${bam_file}` ${params.subsampled_count}
+        `samtools view -c ${bam_file}` ${params.subsampling_spot1_depth}
     samtools index ${name}
     """
 }
@@ -132,10 +113,10 @@ workflow preprocessBams {
     take:
         data
     main:
-        out = take_r1_from_pair(data) | filter_nuclear | subsample
-        //  = remove_duplicates(r1_data) 
-        //     | mix(r1_data)      
-        
+        out = data
+            | take_r1_from_pair
+            | filter_nuclear
+            | subsample
     emit:
         out
 }
@@ -215,7 +196,7 @@ process subsample_with_pairs {
     info = "${ag_id}.subsampling_info.txt"
     """
     total_reads=\$(samtools view -c "${cram_file}")
-    frac=\$(echo "scale=4; if (\$total_reads <= ${params.subsample_depth}) 1 else ${params.subsample_depth}/\$total_reads" | bc)
+    frac=\$(echo "scale=4; if (\$total_reads <= ${params.subsample_hotspot2_depth}) 1 else ${params.subsample_hotspot2_depth}/\$total_reads" | bc)
     
     echo -e "Total_reads\tsampling_fraction" > ${info}
     echo -e "\$total_reads\t\$frac" >> ${info}
@@ -229,8 +210,7 @@ process subsample_with_pairs {
 }
 
 workflow subsampleTest {
-    params.subsample_depth = 30000000
-    subsampled_bams = Channel.fromPath(params.samples_file)
+    Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(row.ag_id, file(row.bam_file), file(row.bam_index)))
         | filter_nuclear
