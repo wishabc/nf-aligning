@@ -102,7 +102,7 @@ process filter_nuclear {
   name = "${uniq_id}.filtered.bam"
   """
   cat "${params.nuclear_chroms}" \
-    | xargs samtools view -F 4 -b ${bam} > ${name}
+    | xargs samtools view --reference ${params.genome_fasta_file} -F 4 -b ${bam} > ${name}
 
   samtools index ${name}
   """
