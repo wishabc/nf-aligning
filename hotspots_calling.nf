@@ -13,6 +13,7 @@ process call_hotspots {
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.density.bw", saveAs: { "${id}.density.bw" }
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.hotspot2.info", saveAs: { "${id}.hotspot2.info" }
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.cutcounts.starch", saveAs: { "${id}.cutcounts.starch" }
+    // publishDir "${params.outdir}/${id}", pattern: "nuclear.hotspots.fdr0.05.starch", saveAs: { "${id}.cutcounts.starch" }
 
 	//container "${params.container}"
 	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
