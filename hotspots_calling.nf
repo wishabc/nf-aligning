@@ -33,8 +33,8 @@ process call_hotspots {
 	export TMPDIR=\$(mktemp -d)
 
 	# workaround for hotspots2 naming scheme
-	ln -s ${bam_file} ${renamed_input}
-	ln -s ${bam_file_index} ${renamed_input}.${bam_file_index.extension}
+	ln -sf ${bam_file} ${renamed_input}
+	ln -sf ${bam_file_index} ${renamed_input}.${bam_file_index.extension}
 
 	hotspot2.sh -F 0.001 -f 0.001 \
 		-p "varWidth_20_${id}" \
