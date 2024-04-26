@@ -242,9 +242,9 @@ workflow normalizeDensity {
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.ag_id, 
-            file(get_density_path(row.filtered_alignments_bam)),
-            file(row.filtered_alignments_bam),
-            file(row.bam_index)
+            file(get_density_path(row.cram_file)),
+            file(row.cram_file),
+            file(row.cram_index)
             )
         )
         | normalize_density
