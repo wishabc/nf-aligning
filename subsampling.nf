@@ -1,5 +1,5 @@
 include { callHotspots } from "./hotspots_calling"
-
+include { density_files } from "./density_files"
 params.conda = "/home/sabramov/miniconda3/envs/babachi"
 
 
@@ -247,6 +247,20 @@ workflow normalizeDensity {
             file(row.cram_index)
             )
         )
+        | normalize_density
+}
+
+workflow tmp {
+    metadata = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.ag_id, 
+            file(row.cram_file),
+            file(row.cram_index)
+            )
+        )
+    density_files(metadata).bigwig
+        | join(metadata)
         | normalize_density
 }
 
