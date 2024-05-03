@@ -1,5 +1,5 @@
 include { callHotspots } from "./hotspots_calling"
-include { density_files } from "./density_files"
+include { density_files } from "./aligning"
 params.conda = "/home/sabramov/miniconda3/envs/babachi"
 
 
