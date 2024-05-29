@@ -233,8 +233,8 @@ workflow filterAndCallHotspots {
 
 
 // DEFUNC 
-def get_density_path(file_path) {
-    file_path.replace(".subsampled_pairs.bam", ".density.bw")
+def get_density_path(file_path, suffix=".subsampled_pairs.bam") {
+    file_path.replace(suffix, ".density.bw")
 }
 workflow normalizeDensity {
     // FIXME: add density file path to samples_file
@@ -242,7 +242,7 @@ workflow normalizeDensity {
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.ag_id, 
-            file(get_density_path(row.cram_file)),
+            file(get_density_path(row.cram_file, ".subsampled_pairs.bam")),
             file(row.cram_file),
             file(row.cram_index)
             )
@@ -255,12 +255,11 @@ workflow tmp {
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.ag_id, 
+            file(get_density_path(row.cram_file, ".cram")),
             file(row.cram_file),
             file(row.cram_index)
             )
         )
-    density_files(metadata).bigwig
-        | join(metadata)
         | normalize_density
 }
 
