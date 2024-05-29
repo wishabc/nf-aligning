@@ -255,7 +255,7 @@ workflow tmp {
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.ag_id, 
-            file(get_density_path(row.cram_file, ".cram")),
+            file(get_density_path(get_density_path(row.cram_file, ".filtered.cram"), ".cram")),
             file(row.cram_file),
             file(row.cram_index)
             )
