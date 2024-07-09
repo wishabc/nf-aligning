@@ -45,8 +45,8 @@ process call_hotspots {
 		'.'
 
 	mv nuclear.peaks.starch ${name}
-	echo -e "hotspot2-num-bases\t\$(unstarch --bases    "${name}")" >> nuclear.hotspot2.info
-  	echo -e "hotspot2-num-spots\t\$(unstarch --elements "${name}")" >> nuclear.hotspot2.info
+	echo -e "hotspot2-num-bases\t\$(unstarch --bases ${name})" >> nuclear.hotspot2.info
+  	echo -e "hotspot2-num-spots\t\$(unstarch --elements ${name})" >> nuclear.hotspot2.info
 	"""
 }
 
@@ -69,11 +69,13 @@ workflow hotspots {
 			file("${params.basepath}/${row.sample_id}/${row.sample_id}.filtered.cram.crai"),
 			))
 		| filter { it[1].exists() }
-	callHotspots(metadata)
+	    | callHotspots
 }
+
+
 workflow {
 	Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-		| map(row -> tuple( row.ag_id, row.bam_file, "${row.bam_file}.crai"))
+		| map(row -> tuple( row.ag_id, row.cram_file, row.cram_index ?: "${row.cram_file}.crai"))
         | callHotspots
 }
