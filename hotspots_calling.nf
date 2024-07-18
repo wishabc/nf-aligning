@@ -13,7 +13,8 @@ process call_hotspots {
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.density.bw", saveAs: { "${id}.density.bw" }
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.hotspot2.info", saveAs: { "${id}.hotspot2.info" }
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.cutcounts.starch", saveAs: { "${id}.cutcounts.starch" }
-    // publishDir "${params.outdir}/${id}", pattern: "nuclear.hotspots.fdr0.05.starch", saveAs: { "${id}.cutcounts.starch" }
+    publishDir "${params.outdir}/${id}", pattern: "nuclear.allcalls.starch", saveAs: { "${id}.allcalls.starch" }
+    publishDir "${params.outdir}/${id}", pattern: "${hotspot5pr}"
 
 	//container "${params.container}"
 	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
@@ -23,9 +24,10 @@ process call_hotspots {
 	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
-	    tuple val(id), path(name), path(spot), path("nuclear.cleavage.total"), path("nuclear.density.bw"), path("nuclear.hotspot2.info"), path("nuclear.cutcounts.starch")
+	    tuple val(id), path(name), path(spot), path("nuclear.cleavage.total"), path("nuclear.density.bw"), path("nuclear.hotspot2.info"), path("nuclear.cutcounts.starch"), path("nuclear.allcalls.starch"), path(hotspot5pr)
 
 	script:
+    hotspot5pr = "${id}.hotspots.fdr0.05.starch"
 	name = "${id}.peaks.fdr0.001.starch"
 	spot = "nuclear.SPOT.txt"
 	renamed_input = "nuclear.${bam_file.extension}"
@@ -45,6 +47,8 @@ process call_hotspots {
 		'.'
 
 	mv nuclear.peaks.starch ${name}
+
+    hsmerge.sh -f 0.05 -m 50 nuclear.allcalls.starch ${hotspot5pr}
 	echo -e "hotspot2-num-bases\t\$(unstarch --bases ${name})" >> nuclear.hotspot2.info
   	echo -e "hotspot2-num-spots\t\$(unstarch --elements ${name})" >> nuclear.hotspot2.info
 	"""
@@ -79,3 +83,29 @@ workflow {
 		| map(row -> tuple( row.ag_id, row.cram_file, row.cram_index ?: "${row.cram_file}.crai"))
         | callHotspots
 }
+
+// process calc_different_fdr {
+// 	tag "${id}"
+//     publishDir "${params.outdir}/${id}", pattern: "${name}"
+// 	label 'high_mem'
+//     module "modwt/1.0:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:samtools/1.3:hotspot2/2.1.1"
+
+//     input:
+// 	    tuple val(id), path(allcalls_file)
+
+//     output:
+//         tuple val(id), path(name)
+    
+//     script:
+//     name = "${id}.hotspots.fdr0.05.starch"
+//     """
+//     hsmerge.sh -f 0.05 -m 50 ${allcalls_file} ${name}
+//     """
+// }
+
+// workflow tmp {
+//     Channel.fromPath(params.samples_file)
+//         | splitCsv(header:true, sep:'\t')
+// 		| map(row -> row.ag_id)
+//         | map(it -> tuple(it, file("/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/matrices/downsampled_projected_atac/test_atac_peaks/output/${it}.allcalls.starch")))
+// }
