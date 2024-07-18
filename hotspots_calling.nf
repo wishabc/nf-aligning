@@ -30,13 +30,13 @@ process call_hotspots {
     hotspot5pr = "${id}.hotspots.fdr0.05.starch"
 	name = "${id}.peaks.fdr0.001.starch"
 	spot = "nuclear.SPOT.txt"
-	renamed_input = "nuclear.${bam_file.extension}"
+	renamed_input = "nuclear.bam"
 	"""
 	export TMPDIR=\$(mktemp -d)
 
 	# workaround for hotspots2 naming scheme
 	ln -sf ${bam_file} ${renamed_input}
-	ln -sf ${bam_file_index} ${renamed_input}.${bam_file_index.extension}
+	ln -sf ${bam_file_index} ${renamed_input}.bai
 
 	hotspot2.sh -F 0.001 -f 0.001 \
 		-p "varWidth_20_${id}" \
