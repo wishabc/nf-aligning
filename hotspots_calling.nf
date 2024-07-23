@@ -74,7 +74,7 @@ workflow {
 workflow tmp {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-		| map(row -> tuple( row.ag_id, row.cram_file, row.cram_index ?: "${row.cram_file}.crai", "${params.outdir}/${row.ag_id}/${row.ag_id}.peaks.fdr0.001.starch"))
+		| map(row -> tuple( row.ag_id, row.cram_file, row.cram_index ?: "${row.cram_file}.crai", file("${params.outdir}/${row.ag_id}/${row.ag_id}.peaks.fdr0.001.starch")))
         | filter { !it[3].exists() }
         | map(it -> tuple(it[0], it[1], it[2]))
         | callHotspots
