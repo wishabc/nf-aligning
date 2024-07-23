@@ -32,7 +32,8 @@ process call_hotspots {
 	spot = "nuclear.SPOT.txt"
 	renamed_input = "nuclear.bam"
 	"""
-	export TMPDIR=\$PWD
+    mkdir tmp # hotspot2 needs a tmp directory, scratch doesn't work due to limited tmp space
+	export TMPDIR="\$PWD/tmp"
 
 	# workaround for hotspots2 naming scheme
 	ln -sf ${bam_file} ${renamed_input}
@@ -51,6 +52,8 @@ process call_hotspots {
     hsmerge.sh -f 0.05 -m 50 nuclear.allcalls.starch ${hotspot5pr}
 	echo -e "hotspot2-num-bases\t\$(unstarch --bases ${name})" >> nuclear.hotspot2.info
   	echo -e "hotspot2-num-spots\t\$(unstarch --elements ${name})" >> nuclear.hotspot2.info
+
+    rm -r tmp
 	"""
 }
 
