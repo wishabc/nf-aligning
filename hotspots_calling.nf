@@ -31,7 +31,7 @@ process call_hotspots {
 	script:
     hotspot5pr = "${id}.hotspots.fdr0.05.starch"
     peaks5pr = "${id}.peaks.fdr0.05.starch"
-    hotstpot1pr = "${id}.hotspots.fdr0.01.starch"
+    hotspot1pr = "${id}.hotspots.fdr0.01.starch"
     peaks1pr = "${id}.peaks.fdr0.01.starch"
  
 	name = "${id}.peaks.fdr0.001.starch"
@@ -54,16 +54,16 @@ process call_hotspots {
 		'.'
 
     hsmerge.sh -f 0.001 -m 50 nuclear.allcalls.starch ${id}.hotspots.fdr0.001.starch
-    hsmerge.sh -f 0.01 -m 50 nuclear.allcalls.starch ${peaks1pr}
+    hsmerge.sh -f 0.01 -m 50 nuclear.allcalls.starch ${hotspot1pr}
 
     bash density-peaks.bash \
         \$TMPDIR \
         "varWidth_20_${id}" \
         nuclear.cutcounts.starch \
-        ${peaks1pr} \
+        ${hotspot1pr} \
         ${params.chrom_sizes_bed} \
         \$TMPDIR/nuclear.density.0.05.starch \
-        ${hotspot1pr} \
+        ${peaks1pr} \
         `cat nuclear.cleavage.total`
 
     bash density-peaks.bash \
