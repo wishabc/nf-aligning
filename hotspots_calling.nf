@@ -23,10 +23,10 @@ process call_hotspots {
 	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
-	    tuple val(id), path(spot), path("nuclear.cleavage.total"), path("nuclear.density.bw"), path("nuclear.hotspot2.info"), path("nuclear.cutcounts.starch"), path("nuclear.allcalls.starch")
-        tuple val(id), path("${id}.hotspots.fdr0.001.starch"), path(name)
-        tuple val(id), path(hotspot1pr), path(peaks1pr)
-        tuple val(id), path(hotspot5pr), path(peaks5pr)
+	    tuple val(id), path(spot), path("nuclear.cleavage.total"), path("nuclear.density.bw"), path("nuclear.hotspot2.info"), path("nuclear.cutcounts.starch"), path("nuclear.allcalls.starch"), emit: out
+        tuple val(id), path("${id}.hotspots.fdr0.001.starch"), path(name), emit: point1pr
+        tuple val(id), path(hotspot1pr), path(peaks1pr), emit: 1pr
+        tuple val(id), path(hotspot5pr), path(peaks5pr), emit: 5pr
 
 	script:
     hotspot5pr = "${id}.hotspots.fdr0.05.starch"
