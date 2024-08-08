@@ -92,7 +92,10 @@ workflow callHotspots {
 	main:
 		call_hotspots(bam_files)
 	emit:
-		call_hotspots.out
+		call_hotspots.out.extra
+        call_hotspots.out.point1pr
+        call_hotspots.out.one_pr
+        call_hotspots.out.five_pr
 }
 
 
