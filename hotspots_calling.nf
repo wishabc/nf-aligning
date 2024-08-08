@@ -25,12 +25,15 @@ process call_hotspots {
 	output:
 	    tuple val(id), path(spot), path("nuclear.cleavage.total"), path("nuclear.density.bw"), path("nuclear.hotspot2.info"), path("nuclear.cutcounts.starch"), path("nuclear.allcalls.starch")
         tuple val(id), path("${id}.hotspots.fdr0.001.starch"), path(name)
-        tuple val(id), path("${id}.hotspots.fdr0.01.starch"), path("${id}.peaks.fdr0.01.starch")
+        tuple val(id), path(hotspot1pr), path(peaks1pr)
         tuple val(id), path(hotspot5pr), path(peaks5pr)
 
 	script:
     hotspot5pr = "${id}.hotspots.fdr0.05.starch"
     peaks5pr = "${id}.peaks.fdr0.05.starch"
+    hotstpot1pr = "${id}.hotspots.fdr0.01.starch"
+    peaks1pr = "${id}.peaks.fdr0.01.starch"
+ 
 	name = "${id}.peaks.fdr0.001.starch"
 	spot = "nuclear.SPOT.txt"
 	renamed_input = "nuclear.bam"
@@ -51,16 +54,16 @@ process call_hotspots {
 		'.'
 
     hsmerge.sh -f 0.001 -m 50 nuclear.allcalls.starch ${id}.hotspots.fdr0.001.starch
-    hsmerge.sh -f 0.01 -m 50 nuclear.allcalls.starch ${id}.hotspots.fdr0.01.starch
+    hsmerge.sh -f 0.01 -m 50 nuclear.allcalls.starch ${peaks1pr}
 
     bash density-peaks.bash \
         \$TMPDIR \
         "varWidth_20_${id}" \
         nuclear.cutcounts.starch \
-        ${id}.hotspots.fdr0.01.starch \
+        ${peaks1pr} \
         ${params.chrom_sizes_bed} \
         \$TMPDIR/nuclear.density.0.05.starch \
-        ${id}.peaks.fdr0.01.starch \
+        ${hotspot1pr} \
         `cat nuclear.cleavage.total`
 
     bash density-peaks.bash \
