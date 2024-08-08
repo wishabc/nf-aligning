@@ -7,14 +7,13 @@ include { get_container } from "./aligning"
 process call_hotspots {
 	tag "${id}"
 	label 'high_mem'
-	publishDir "${params.outdir}/${id}", pattern: "${name}"
+	publishDir "${params.outdir}/${id}", pattern: "${id}*"
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.SPOT.txt", saveAs: { "${id}.SPOT.txt" } 
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.cleavage.total", saveAs: { "${id}.cleavage.total" }
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.density.bw", saveAs: { "${id}.density.bw" }
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.hotspot2.info", saveAs: { "${id}.hotspot2.info" }
 	publishDir "${params.outdir}/${id}", pattern: "nuclear.cutcounts.starch", saveAs: { "${id}.cutcounts.starch" }
     publishDir "${params.outdir}/${id}", pattern: "nuclear.allcalls.starch", saveAs: { "${id}.allcalls.starch" }
-    publishDir "${params.outdir}/${id}", pattern: "${hotspot5pr}"
 
 	//container "${params.container}"
 	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
@@ -24,10 +23,14 @@ process call_hotspots {
 	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
-	    tuple val(id), path(name), path(spot), path("nuclear.cleavage.total"), path("nuclear.density.bw"), path("nuclear.hotspot2.info"), path("nuclear.cutcounts.starch"), path("nuclear.allcalls.starch"), path(hotspot5pr)
+	    tuple val(id), path(spot), path("nuclear.cleavage.total"), path("nuclear.density.bw"), path("nuclear.hotspot2.info"), path("nuclear.cutcounts.starch"), path("nuclear.allcalls.starch")
+        tuple val(id), path("${id}.hotspots.fdr0.001.starch"), path(name)
+        tuple val(id), path("${id}.hotspots.fdr0.01.starch"), path("${id}.peaks.fdr0.01.starch")
+        tuple val(id), path(hotspot5pr), path(peaks5pr)
 
 	script:
     hotspot5pr = "${id}.hotspots.fdr0.05.starch"
+    peaks5pr = "${id}.peaks.fdr0.05.starch"
 	name = "${id}.peaks.fdr0.001.starch"
 	spot = "nuclear.SPOT.txt"
 	renamed_input = "nuclear.bam"
@@ -39,7 +42,7 @@ process call_hotspots {
 	ln -sf ${bam_file} ${renamed_input}
 	ln -sf ${bam_file_index} ${renamed_input}.bai
 
-	hotspot2.sh -F 0.001 -f 0.001 \
+	hotspot2.sh -F 0.05 -f 0.05 \
 		-p "varWidth_20_${id}" \
 		-M "${params.mappable}" \
 		-c "${params.chrom_sizes_bed}" \
@@ -47,9 +50,32 @@ process call_hotspots {
 		${renamed_input} \
 		'.'
 
-	mv nuclear.peaks.starch ${name}
+    hsmerge.sh -f 0.001 -m 50 nuclear.allcalls.starch ${id}.hotspots.fdr0.001.starch
+    hsmerge.sh -f 0.01 -m 50 nuclear.allcalls.starch ${id}.hotspots.fdr0.01.starch
 
-    hsmerge.sh -f 0.05 -m 50 nuclear.allcalls.starch ${hotspot5pr}
+    bash density-peaks.bash \
+        \$TMPDIR \
+        "varWidth_20_${id}" \
+        nuclear.cutcounts.starch \
+        ${id}.hotspots.fdr0.01.starch \
+        ${params.chrom_sizes_bed} \
+        \$TMPDIR/nuclear.density.0.05.starch \
+        ${id}.peaks.fdr0.01.starch \
+        `cat nuclear.cleavage.total`
+
+    bash density-peaks.bash \
+        \$TMPDIR \
+        "varWidth_20_${id}" \
+        nuclear.cutcounts.starch \
+        ${id}.hotspots.fdr0.001.starch \
+        ${params.chrom_sizes_bed} \
+        \$TMPDIR/nuclear.density.0.05.starch \
+        ${name} \
+        `cat nuclear.cleavage.total`
+
+    mv nuclear.hotspots.starch ${hotspot5pr}
+    mv nuclear.peaks.starch ${peaks5pr}
+
 	echo -e "hotspot2-num-bases\t\$(unstarch --bases ${name})" >> nuclear.hotspot2.info
   	echo -e "hotspot2-num-spots\t\$(unstarch --elements ${name})" >> nuclear.hotspot2.info
 
