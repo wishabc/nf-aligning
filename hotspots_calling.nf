@@ -76,7 +76,7 @@ process call_hotspots {
         ${name} \
         `cat nuclear.cleavage.total`
 
-    mv nuclear.hotspots.starch ${hotspot5pr}
+    mv nuclear.hotspots.fdr0.05.starch ${hotspot5pr}
     mv nuclear.peaks.starch ${peaks5pr}
 
 	echo -e "hotspot2-num-bases\t\$(unstarch --bases ${name})" >> nuclear.hotspot2.info
