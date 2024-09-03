@@ -212,7 +212,7 @@ process subsample_with_pairs {
 workflow subsampleTest {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.bam_file), file(row.bam_index)))
+        | map(row -> tuple(row.ag_id, file(row.cram_file), file(row.cram_index)))
         | filter_nuclear
         | subsample_with_pairs
         | map(it -> tuple(it[0], it[1], it[2]))
