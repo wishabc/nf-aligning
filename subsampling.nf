@@ -4,18 +4,18 @@ params.conda = "/home/sabramov/miniconda3/envs/babachi"
 
 
 process take_r1_from_pair {
-    tag "${uniq_id}"
+    tag "${ag_id}"
     conda params.conda
     cpus 3
 
     input:
-        tuple val(uniq_id), path(bam_file), path(bam_file_index)
+        tuple val(ag_id), path(bam_file), path(bam_file_index)
 
     output:
-        tuple val(uniq_id), path(name), path("${name}.bai")
+        tuple val(ag_id), path(name), path("${name}.bai")
     
     script:
-    name = "${uniq_id}.r1.bam"
+    name = "${ag_id}.r1.bam"
     """
     samtools view -F 140 -u -h \
         --reference ${params.genome_fasta_file} ${bam_file} \
@@ -26,18 +26,18 @@ process take_r1_from_pair {
 
 
 process subsample {
-    tag "${uniq_id}"
+    tag "${ag_id}"
     conda params.conda
-    publishDir "${params.outdir}/${uniq_id}"
+    publishDir "${params.outdir}/${ag_id}"
 
     input:
-        tuple val(uniq_id), path(bam_file), path(bam_file_index)
+        tuple val(ag_id), path(bam_file), path(bam_file_index)
     
     output:
-        tuple val(uniq_id), path(name), path("${name}.bai")
+        tuple val(ag_id), path(name), path("${name}.bai")
 
     script:
-    name = "${uniq_id}.subsampled.bam"
+    name = "${ag_id}.subsampled.bam"
     """
     python3 $moduleDir/bin/random_sample.py ${bam_file} ${name} \
         `samtools view -c ${bam_file}` ${params.subsampling_spot1_depth}
@@ -50,14 +50,14 @@ process spot_score {
     // Impossible to use anywhere except Altius cluster
     //conda params.conda
     module "bedops/2.4.35-typical:samtools/1.3:modwt/1.0:kentutil/302:hotspot2/2.1.1:jdk/1.8.0_92:gcc/4.7.2:R/3.2.5:picard/2.8.1:git/2.3.3:coreutils/8.25:bedtools/2.25.0:python/3.5.1:pysam/0.9.0:htslib/1.6.0:numpy/1.11.0:atlas-lapack/3.10.2:scipy/1.0.0:scikit-learn/0.18.1:preseq:/2.0.3:gsl/2.4"
-    publishDir "${params.outdir}/${uniq_id}"
+    publishDir "${params.outdir}/${ag_id}"
 
 
     input:
-        tuple val(uniq_id), path(bam_file), path(bam_file_index)
+        tuple val(ag_id), path(bam_file), path(bam_file_index)
 
     output:
-        tuple val(uniq_id), path("r1.*")
+        tuple val(ag_id), path("r1.*")
 
     script:
     renamed_input = "r1.${bam_file.extension}"
@@ -89,17 +89,17 @@ process spot_score {
 
 process filter_nuclear {
   conda params.conda
-  tag "${uniq_id}"
+  tag "${ag_id}"
   scratch true
 
   input:
-    tuple val(uniq_id), path(bam), path(bam_index)
+    tuple val(ag_id), path(bam), path(bam_index)
 
   output:
-    tuple val(uniq_id), path("${name}"), path("${name}.bai")
+    tuple val(ag_id), path("${name}"), path("${name}.bai")
 
   script:
-  name = "${uniq_id}.filtered.bam"
+  name = "${ag_id}.filtered.bam"
   """
   cat "${params.nuclear_chroms}" \
     | xargs samtools view --reference ${params.genome_fasta_file} -F 4 -b ${bam} > ${name}
