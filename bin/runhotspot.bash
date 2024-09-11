@@ -91,7 +91,7 @@ _DUPOK_ = $DUPOK
 ## FDR levels, separated by spaces if more than one. Set to N if you
 ## do not want FDR thresholding (for example, if you just want SPOT
 ## score computed.)
-_FDRS_ = "0.05 0.01 0.001"
+_FDRS_ = "N"
 
 ## Output directories (can all be the same location).  Use full path names.
 ## _OUTDIR_ contains tags files in converted bed.starch and lib.txt formats (for hotspot
