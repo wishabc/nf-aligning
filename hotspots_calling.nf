@@ -49,7 +49,7 @@ process spot_score {
 
 // Need to contenirize at some point
 process call_hotspots {
-	tag "${id}"
+	tag "${id}:${max_fdr}"
 	label 'high_mem'
 	publishDir "${params.outdir}/${id}", pattern: "${id}*"
 
@@ -86,7 +86,7 @@ process call_hotspots {
 		${renamed_input} \
 		'.'
 
-    mv nuclear.hotspots.fdr${fdr}.starch ${hotspots}
+    mv nuclear.hotspots.fdr${max_fdr}.starch ${hotspots}
     mv nuclear.peaks.starch ${peaks}
     mv nuclear.SPOT.txt ${id}.SPOT.txt
     mv nuclear.cleavage.total ${id}.cleavage.total
@@ -100,7 +100,7 @@ process call_hotspots {
 
 
 process hotspots_other_fdr {
-	tag "${id}"
+	tag "${id}:${fdr}"
 	label 'high_mem'
 	publishDir "${params.outdir}/${id}"
 
