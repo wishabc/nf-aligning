@@ -66,8 +66,8 @@ process call_hotspots {
         tuple val(id), val(fdr), path(hotspots), path(peaks), emit: hotspots
 
 	script:
-    hotspots = "${id}.hotspots.fdr0.05.starch"
-    peaks = "${id}.peaks.fdr0.05.starch"
+    hotspots = "${id}.hotspots.fdr${max_fdr}.starch"
+    peaks = "${id}.peaks.fdr${max_fdr}.starch"
 	renamed_input = "nuclear.bam"
 	"""
     # hotspot2 needs a tmp directory, scratch doesn't work due to limited tmp space
@@ -78,7 +78,7 @@ process call_hotspots {
 	ln -sf ${bam_file} ${renamed_input}
 	ln -sf ${bam_file_index} ${renamed_input}.bai
 
-	hotspot2.sh -F ${fdr} -f ${fdr} \
+	hotspot2.sh -F ${max_fdr} -f ${max_fdr} \
 		-p "varWidth_20_${id}" \
 		-M "${params.mappable}" \
 		-c "${params.chrom_sizes_bed}" \
