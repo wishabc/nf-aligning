@@ -78,8 +78,8 @@ process spot_score {
       "${params.readlength}" \
       DNaseI
 
-    starch --header r1-both-passes/r1.hotspot.twopass.zscore.wig \
-      > r1.spots.starch
+    starch --header \
+        r1-both-passes/r1.hotspot.twopass.zscore.wig > r1.spots.starch
 
     bash $moduleDir/bin/info.sh \
       r1.spots.starch hotspot1 r1.spot.out \
