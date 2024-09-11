@@ -63,7 +63,7 @@ process call_hotspots {
 	output:
         tuple val(id), path("${id}.allcalls.starch"), path("${id}.cutcounts.starch"), path("${id}.cleavage.total"), emit: peak_calling
 	    tuple val(id), path("${id}.SPOT.txt"), path("${id}.density.bw"), emit: extra
-        tuple val(id), val(fdr), path(hotspots), path(peaks), emit: hotspots
+        tuple val(id), val(max_fdr), path(hotspots), path(peaks), emit: hotspots
 
 	script:
     hotspots = "${id}.hotspots.fdr${max_fdr}.starch"
