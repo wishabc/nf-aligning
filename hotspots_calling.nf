@@ -151,7 +151,9 @@ workflow callHotspots {
             | call_hotspots
         
         extra_fdrs = fdrs
-            | filter { it != fdrs.max() }
+            | combine(fdrs.max())
+            | filter { it[0] != it[1] }
+            | map(it -> it[0])
 
         out = data.peak_calling
             | map(it -> tuple(it[0], it[4], it[5], it[2]))
