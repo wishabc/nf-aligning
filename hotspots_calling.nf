@@ -109,7 +109,7 @@ process hotspots_other_fdr {
 	module "modwt/1.0:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:samtools/1.3:hotspot2/2.1.1"
 
     input:
-	    tuple val(id), path(all_calls), path(cutcounts), path(total_counts), val(fdr)
+	    tuple val(fdr), val(id), path(all_calls), path(cutcounts), path(total_counts)
 
     output:
         tuple val(id), val(fdr), path(hotspots), path(peaks)
@@ -150,13 +150,12 @@ workflow callHotspots {
             | combine(fdrs.max())
             | call_hotspots
         
-        extra_fdrs = fdrs
-            | combine(fdrs.max())
-            | filter { it[0] != it[1] }
-            | map(it -> it[0])
-
-        out = data.peak_calling
-            | combine(extra_fdrs)
+        out = fdrs
+            // | combine(fdrs.max())
+            // | filter { it[0] != it[1] }
+            // | map(it -> it[0])
+            | filter { it != fdrs.max() }
+            | combine(data.peak_calling)
             | hotspots_other_fdr
             | mix(data.hotspots)
 	emit:
