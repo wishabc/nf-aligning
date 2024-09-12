@@ -61,7 +61,7 @@ process call_hotspots {
 	    tuple val(id), path(bam_file), path(bam_file_index), val(max_fdr)
 
 	output:
-        tuple val(id), val(max_fdr), path("${id}.allcalls.starch"), path("${id}.cutcounts.starch"), path("${id}.cleavage.total"), emit: peak_calling
+        tuple val(id), path("${id}.allcalls.starch"), path("${id}.cutcounts.starch"), path("${id}.cleavage.total"), emit: peak_calling
 	    tuple val(id), val(max_fdr), path("${id}.SPOT.txt"), path("${id}.density.bw"), emit: extra
         tuple val(id), val(max_fdr), path(hotspots), path(peaks), emit: hotspots
 
@@ -153,7 +153,6 @@ workflow callHotspots {
         extra_fdrs = fdrs
             | combine(fdrs.max())
             | filter { it[0] != it[1] }
-            | view()
             | map(it -> it[0])
 
         out = data.peak_calling
