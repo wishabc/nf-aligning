@@ -151,10 +151,9 @@ workflow callHotspots {
             | call_hotspots
         
         out = fdrs
-            // | combine(fdrs.max())
-            // | filter { it[0] != it[1] }
-            // | map(it -> it[0])
-            | filter { it != fdrs.max() }
+            | combine(fdrs.max())
+            | filter { it[0] != it[1] }
+            | map(it -> it[0])
             | combine(data.peak_calling)
             | hotspots_other_fdr
             | mix(data.hotspots)
