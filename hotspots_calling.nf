@@ -156,7 +156,6 @@ workflow callHotspots {
             | map(it -> it[0])
 
         out = data.peak_calling
-            | map(it -> tuple(it[0], it[4], it[5], it[2]))
             | combine(extra_fdrs)
             | hotspots_other_fdr
             | mix(data.hotspots)
