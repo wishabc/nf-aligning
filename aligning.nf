@@ -462,3 +462,10 @@ workflow doMacs2 {
       | convert_to_bam
       | macs2
 }
+
+workflow calcDensity {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, row.cram_file, "${row.cram_file}.crai"))
+        | density_files
+}
