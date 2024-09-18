@@ -170,13 +170,26 @@ workflow {
         | callHotspots
 }
 
-workflow tmp {
+
+// defunc
+
+workflow hotspotLowerFdr {
+    fdrs = Channel.of(params.hotspot2_fdr)
+            | flatMap(it -> it.tokenize(','))
+            | map { it as Float }
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-		| map(row -> tuple( row.ag_id, row.cram_file, row.cram_index ?: "${row.cram_file}.crai", file("${params.outdir}/${row.ag_id}/${row.ag_id}.peaks.fdr0.001.starch")))
-        | filter { !it[3].exists() }
-        | map(it -> tuple(it[0], it[1], it[2]))
-        | callHotspots
+		| map(
+            row -> tuple(
+                row.ag_id,
+                file(row.allcalls),
+                file(row.cutcounts),
+                file(row.cleavage_total)
+            )
+        )
+        | combine(fdrs)
+        | map(it -> tuple(it[4], *it[0..3]))
+        | hotspots_other_fdr
 }
 
 // workflow hotspots {

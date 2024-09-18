@@ -379,50 +379,27 @@ workflow alignReads {
   take:
     trimmed_reads
   main:
-    aligned_files = alignBwa(trimmed_reads) | filter_and_sort
-    filtered_bam_files = merge_bam(aligned_files.groupTuple()) 
-    | mark_duplicates 
-    | filter_nuclear
+    filtered_bam_files = trimmed_reads
+        | alignBwa
+        | filter_and_sort
+        | groupTuple()
+        | merge_bam
+        | mark_duplicates 
+        | filter_nuclear
 
-    is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[3])).distinct()
+    is_paired_dict = trimmed_reads
+        | map(it -> tuple(it[0], it[3]))
+        | distinct()
     
-    bam_files = filtered_bam_files.join(is_paired_dict)
-    insert_size(bam_files)
-    macs2(bam_files)
-    density_files(filtered_bam_files)
-    convert_to_cram(filtered_bam_files)
+    filtered_bam_files
+        | join(is_paired_dict)
+        | (insert_size & macs2)
+
+    filtered_bam_files
+        | (density_files & convert_to_cram)
   emit:
     convert_to_cram.out
 }
-
-workflow mergeFiles {
-  basepath = "/net/seq/data2/projects/sabramov/ENCODE4/atac_aligning/output"
-  bam_files = Channel.fromPath(params.samples_file)
-    | splitCsv(header:true, sep:'\t')
-    | map(row -> tuple(row.sample_id,
-      row.align_id,
-      file("${basepath}/${row.align_id}/${row.align_id}.filtered.cram"),
-      file("${basepath}/${row.align_id}/${row.align_id}.filtered.cram.crai"),
-     ))
-    | filter { it[2].exists() }
-    | map(it -> tuple(it[0], it[2]))
-    | set_key_for_group_tuple
-    | groupTuple()
-    | merge_bam
-    | mark_duplicates 
-    | filter_nuclear
-    | convert_to_cram
-
-    // is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[3])).distinct()
-    
-    // bam_files = filtered_bam_files.join(is_paired_dict)
-    // insert_size(bam_files)
-    // macs2(bam_files)
-    // density_files(filtered_bam_files)
-  emit:
-    bam_files
-}
-
 
 workflow {
     fastq_trimmed_paired = Channel
@@ -433,35 +410,67 @@ workflow {
 }
 
 
-process convert_to_bam {
-    tag "${sample_id}"
-    publishDir "${params.outdir}/${sample_id}/stats"
-    container "${params.container}"
-    scratch true
+// DEFUNC
 
-    when:
-        params.do_macs
 
-    input:
-        tuple val(sample_id), path(cram), path(crai), val(is_paired)
+// workflow mergeFiles {
+//   basepath = "/net/seq/data2/projects/sabramov/ENCODE4/atac_aligning/output"
+//   bam_files = Channel.fromPath(params.samples_file)
+//     | splitCsv(header:true, sep:'\t')
+//     | map(row -> tuple(row.sample_id,
+//       row.align_id,
+//       file("${basepath}/${row.align_id}/${row.align_id}.filtered.cram"),
+//       file("${basepath}/${row.align_id}/${row.align_id}.filtered.cram.crai"),
+//      ))
+//     | filter { it[2].exists() }
+//     | map(it -> tuple(it[0], it[2]))
+//     | set_key_for_group_tuple
+//     | groupTuple()
+//     | merge_bam
+//     | mark_duplicates 
+//     | filter_nuclear
+//     | convert_to_cram
 
-    output:
-        tuple val(sample_id), path(bam), path("${bam}.bai"), val(is_paired)
+//     // is_paired_dict = trimmed_reads.map(it -> tuple(it[0], it[3])).distinct()
+    
+//     // bam_files = filtered_bam_files.join(is_paired_dict)
+//     // insert_size(bam_files)
+//     // macs2(bam_files)
+//     // density_files(filtered_bam_files)
+//   emit:
+//     bam_files
+// }
 
-    script:
-    bam = cram.baseName + '.bam'
-    """
-    samtools view ${cram} -b -h > ${bam}
-    samtools index ${bam}
-    """
-}
-workflow doMacs2 {
-  Channel.fromPath(params.samples_file)
-      | splitCsv(header:true, sep:'\t')
-      | map(row -> tuple(row.ag_id, row.bam_file, "${row.bam_file}.crai", row.type == 'paired'))
-      | convert_to_bam
-      | macs2
-}
+
+// process convert_to_bam {
+//     tag "${sample_id}"
+//     publishDir "${params.outdir}/${sample_id}/stats"
+//     container "${params.container}"
+//     scratch true
+
+//     when:
+//         params.do_macs
+
+//     input:
+//         tuple val(sample_id), path(cram), path(crai), val(is_paired)
+
+//     output:
+//         tuple val(sample_id), path(bam), path("${bam}.bai"), val(is_paired)
+
+//     script:
+//     bam = cram.baseName + '.bam'
+//     """
+//     samtools view ${cram} -b -h > ${bam}
+//     samtools index ${bam}
+//     """
+// }
+// workflow doMacs2 {
+//   Channel.fromPath(params.samples_file)
+//       | splitCsv(header:true, sep:'\t')
+//       | map(row -> tuple(row.ag_id, row.bam_file, "${row.bam_file}.crai", row.type == 'paired'))
+//       | convert_to_bam
+//       | macs2
+// }
 
 workflow calcDensity {
     Channel.fromPath(params.samples_file)
