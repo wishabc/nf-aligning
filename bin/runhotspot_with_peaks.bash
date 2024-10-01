@@ -135,14 +135,15 @@ tokenFile=$CONFIGOUT
 cd $OUTDIR
 
 # Do SPOT only (set _FDRS_ to "N" in runall.tokens.txt)
-    # \$pipeDir/run_make_lib
-    # \$pipeDir/run_10kb_counts
-    # \$pipeDir/run_pass1_hotspot
-    # \$pipeDir/run_pass1_merge_and_thresh_hotspots
-    # \$pipeDir/run_pass2_hotspot
-    # \$pipeDir/run_rescore_hotspot_passes
-    # \$pipeDir/run_spot
+
 scripts="
+    \$pipeDir/run_make_lib
+    \$pipeDir/run_10kb_counts
+    \$pipeDir/run_pass1_hotspot
+    \$pipeDir/run_pass1_merge_and_thresh_hotspots
+    \$pipeDir/run_pass2_hotspot
+    \$pipeDir/run_rescore_hotspot_passes
+    \$pipeDir/run_spot
     \$pipeDir/run_thresh_hot.R
     \$pipeDir/run_both-passes_merge_and_thresh_hotspots
     \$pipeDir/run_add_peaks_per_hotspot
