@@ -175,7 +175,7 @@ workflow {
 
 workflow hotspotLowerFdr {
     fdrs = Channel.of(params.hotspot2_fdr)
-            | flatMap(it -> it.tokenize(','))
+            | flatMap(it -> it.toString().tokenize(','))
             | map { it as Float }
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
