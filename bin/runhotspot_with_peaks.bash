@@ -116,9 +116,6 @@ _CLEAN_ = T
 
 _PKFIND_BIN_ = $HOTSPOT_DISTR/hotspot-deploy/bin/wavePeaks
 
-wavelets=$HOTSPOT_DISTR/hotspot-deploy/bin/wavelets
-which wavelets
-
 ## Peak-finding smoothing level. If the resolution of the input file
 ## is x, then the results are smoothed out to a scale of (2^level)*x.
 _PKFIND_SMTH_LVL_ = 3
@@ -171,6 +168,8 @@ scripts="
     \$tokenFile \
     \$scripts
 
+wavelets=$HOTSPOT_DISTR/hotspot-deploy/bin/wavelets
+which wavelets
 for script in \$scripts
 do
     ./\$(basename \$script).tok
