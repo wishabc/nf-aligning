@@ -137,8 +137,11 @@ cd $OUTDIR
 # Do SPOT only (set _FDRS_ to "N" in runall.tokens.txt)
 
 scripts="
+    \$pipeDir/run_badspot
     \$pipeDir/run_make_lib
+    \$pipeDir/run_wavelet_peak_finding
     \$pipeDir/run_10kb_counts
+    \$pipeDir/run_generate_random_lib
     \$pipeDir/run_pass1_hotspot
     \$pipeDir/run_pass1_merge_and_thresh_hotspots
     \$pipeDir/run_pass2_hotspot
