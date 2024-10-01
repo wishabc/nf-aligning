@@ -168,7 +168,7 @@ scripts="
     \$tokenFile \
     \$scripts
 
-wavelets=$HOTSPOT_DISTR/hotspot-deploy/bin/wavelets
+alias wavelets="$HOTSPOT_DISTR/hotspot-deploy/bin/wavelets"
 which wavelets
 for script in \$scripts
 do
