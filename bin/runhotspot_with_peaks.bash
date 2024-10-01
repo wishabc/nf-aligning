@@ -101,7 +101,7 @@ _OUTDIR_ = $OUTDIR
 _RANDIR_ = $OUTDIR
 
 ## Set to T if you want scripts to skip steps that have already been done.
-_CHECK_ = F
+_CHECK_ = T
 
 ## If _CHECK_ = T, outputs are checked for completeness by searching
 ## for results for the following chromsome.
@@ -113,6 +113,14 @@ _HOTSPOT_ = $HOTSPOT_DISTR/hotspot-deploy/bin/hotspot
 ## Clean up. Remove all intermediate files and directories if set to T.  See
 ## pipeline script run_final.
 _CLEAN_ = T
+
+_PKFIND_BIN_ = $HOTSPOT_DISTR/hotspot-deploy/bin/wavePeaks
+## Peak-finding smoothing level. If the resolution of the input file
+## is x, then the results are smoothed out to a scale of (2^level)*x.
+_PKFIND_SMTH_LVL_ = 3
+
+## Random number seed, used for generating random tags for FDR thresholding.
+_SEED_=101
 
 ## Hotspot program parameters
 _THRESH_ = 2
