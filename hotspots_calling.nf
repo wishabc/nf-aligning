@@ -78,7 +78,7 @@ process call_hotspots {
 	ln -sf ${bam_file} ${renamed_input}
 	ln -sf ${bam_file_index} ${renamed_input}.bai
 
-	hotspot2.sh -F ${max_fdr} -f ${max_fdr} \
+	hotspot2.sh -F ${max_fdr} -f ${max_fdr} -P \
 		-p "varWidth_20_${id}" \
 		-M "${params.mappable}" \
 		-c "${params.chrom_sizes_bed}" \
@@ -94,7 +94,7 @@ process call_hotspots {
     mv nuclear.cutcounts.starch ${id}.cutcounts.starch
     mv nuclear.allcalls.starch ${id}.allcalls.starch
 
-    rm -r tmp
+    #rm -r tmp
 	"""
 }
 
