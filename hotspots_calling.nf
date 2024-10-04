@@ -52,6 +52,7 @@ process call_hotspots {
 	tag "${id}:${max_fdr}"
 	label 'high_mem'
 	publishDir "${params.outdir}/${id}", pattern: "${id}*"
+    publishDir "${params.outdir}/${id}", pattern: "tmp/*"
 
 	//container "${params.container}"
 	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
