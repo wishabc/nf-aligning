@@ -72,7 +72,7 @@ process call_hotspots {
         --bam ${bam_file} \
         --fdrs ${fdrs} \
         --mappable_bases /net/seq/data2/projects/sabramov/SuperIndex/GRCh38_no_alts.K36.center_sites.n100.nuclear.merged.bed.gz \
-        --chrom_sizes ${params.chrom_sizes_bed}  \
+        --chrom_sizes ${params.chrom_sizes}  \
         --cpus ${task.cpus}
 
     # TODO rm pvals smoothed_signal parquets
