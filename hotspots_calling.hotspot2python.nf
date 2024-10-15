@@ -86,7 +86,7 @@ workflow callHotspots {
         out = bam_files
             | call_hotspots
 	emit:
-		out
+		out.peaks_hotspots
 
 }
 
