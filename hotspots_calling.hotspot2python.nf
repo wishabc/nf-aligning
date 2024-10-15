@@ -52,7 +52,7 @@ process call_hotspots {
 	tag "${id}"
 	label 'high_mem'
 	publishDir "${params.outdir}/${id}", pattern: "${id}*"
-    // publishDir "${params.outdir}/${id}", pattern: "tmp/*"
+    memory { 50.GB + 20.GB * task.attempt }
 
 	cpus 6
     conda "/home/sabramov/miniconda3/envs/jupyterlab"
