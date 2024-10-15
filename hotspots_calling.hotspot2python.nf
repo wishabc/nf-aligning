@@ -61,8 +61,8 @@ process call_hotspots {
 	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
-        tuple val(id), path("${id}.allcalls.starch"), path("${id}.cutcounts.starch"), path("${id}.cleavage.total"), emit: peak_calling
-        tuple val(id), path("${id}.hotspots*"), path("${id}.peaks*")
+        tuple val(id), path("${id}.*.parquet"), emit: tmp_files
+        tuple val(id), path("${id}.hotspots*"), path("${id}.peaks*"), emit: peaks_hotspots
 
 	script:
     fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
