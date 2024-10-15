@@ -49,115 +49,43 @@ process spot_score {
 
 // Need to contenirize at some point
 process call_hotspots {
-	tag "${id}:${max_fdr}"
+	tag "${id}"
 	label 'high_mem'
 	publishDir "${params.outdir}/${id}", pattern: "${id}*"
-    publishDir "${params.outdir}/${id}", pattern: "tmp/*"
+    // publishDir "${params.outdir}/${id}", pattern: "tmp/*"
 
-	//container "${params.container}"
-	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
+	cpus 6
     conda "/home/sabramov/miniconda3/envs/jupyterlab"
 
 	input:
-	    tuple val(id), path(bam_file), path(bam_file_index), val(max_fdr)
+	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
         tuple val(id), path("${id}.allcalls.starch"), path("${id}.cutcounts.starch"), path("${id}.cleavage.total"), emit: peak_calling
-	    tuple val(id), val(max_fdr), path("${id}.SPOT.txt"), path("${id}.density.bw"), emit: extra
-        tuple val(id), val(max_fdr), path(hotspots), path(peaks), emit: hotspots
+        tuple val(id), path("${id}.hotspots*"), path("${id}.peaks*")
 
 	script:
-    hotspots = "${id}.hotspots.fdr${max_fdr}.starch"
-    peaks = "${id}.peaks.fdr${max_fdr}.starch"
-	renamed_input = "nuclear.bam"
+    fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
 	"""
-    # hotspot2 needs a tmp directory, scratch doesn't work due to limited tmp space
-    mkdir -p tmp
-	export TMPDIR="\$PWD/tmp"
+    python3 ~/packages/hotspot2/hotspot2/main.py \
+        ${id} \
+        --bam ${bam_file} \
+        --fdrs ${fdrs} \
+        --mappable_bases /net/seq/data2/projects/sabramov/SuperIndex/GRCh38_no_alts.K36.center_sites.n100.nuclear.merged.bed.gz \
+        --chrom_sizes ${params.chrom_sizes_bed}  \
+        --cpus ${task.cpus}
 
-	# workaround for hotspots2 naming scheme
-	ln -sf ${bam_file} ${renamed_input}
-	ln -sf ${bam_file_index} ${renamed_input}.bai
-
-	hotspot2.sh -F ${max_fdr} -f ${max_fdr} -P \
-		-p "varWidth_20_${id}" \
-		-M "${params.mappable}" \
-		-c "${params.chrom_sizes_bed}" \
-		-C "${params.centers}" \
-		${renamed_input} \
-		'.'
-
-    mv nuclear.hotspots.fdr${max_fdr}.starch ${hotspots}
-    mv nuclear.peaks.starch ${peaks}
-    mv nuclear.SPOT.txt ${id}.SPOT.txt
-    mv nuclear.cleavage.total ${id}.cleavage.total
-    mv nuclear.density.bw ${id}.density.bw
-    mv nuclear.cutcounts.starch ${id}.cutcounts.starch
-    mv nuclear.allcalls.starch ${id}.allcalls.starch
-
-    #rm -r tmp
+    # TODO rm pvals smoothed_signal parquets
 	"""
-}
-
-
-process hotspots_other_fdr {
-	tag "${id}:${fdr}"
-	label 'high_mem'
-	publishDir "${params.outdir}/${id}"
-
-	//container "${params.container}"
-	//containerOptions "${get_container(params.nuclear_chroms)} ${get_container(params.chrom_sizes_bed)} ${get_container(params.mappable)} ${get_container(params.centers)}"
-	module "modwt/1.0:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:samtools/1.3:hotspot2/2.1.1"
-
-    input:
-	    tuple val(fdr), val(id), path(all_calls), path(cutcounts), path(total_counts)
-
-    output:
-        tuple val(id), val(fdr), path(hotspots), path(peaks)
-    
-    script:
-    hotspots = "${id}.hotspots.fdr${fdr}.starch"
-    peaks = "${id}.peaks.fdr${fdr}.starch"
-    """
-    # hotspot2 needs a tmp directory, scratch doesn't work due to limited tmp space
-    mkdir -p tmp 
-	export TMPDIR="\$PWD/tmp"
-
-    hsmerge.sh -f ${fdr} -m 50 ${all_calls} ${hotspots}
-    
-    bash density-peaks.bash \
-        \$TMPDIR \
-        "varWidth_20_${id}" \
-        ${cutcounts} \
-        ${hotspots} \
-        ${params.chrom_sizes_bed} \
-        \$TMPDIR/nuclear.density.${fdr}.starch \
-        ${peaks} \
-        `cat ${total_counts}`
-    
-    rm -r tmp
-    """
 }
 
 workflow callHotspots {
 	take:
 		bam_files
 	main:
-        fdrs = Channel.of(params.hotspot2_fdr)
-            | flatMap(it -> it.tokenize(','))
-            | map { it as Float }
-        
         data = bam_files
-            | combine(fdrs.max())
             | call_hotspots
-        
-        out = fdrs
-            | combine(fdrs.max())
-            | filter { it[0] != it[1] }
-            | map(it -> it[0])
-            | combine(data.peak_calling)
-            | hotspots_other_fdr
-            | mix(data.hotspots)
+
 	emit:
 		out
 
