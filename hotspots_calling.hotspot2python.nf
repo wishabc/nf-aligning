@@ -83,9 +83,8 @@ workflow callHotspots {
 	take:
 		bam_files
 	main:
-        data = bam_files
+        out = bam_files
             | call_hotspots
-
 	emit:
 		out
 
