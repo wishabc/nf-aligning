@@ -52,7 +52,7 @@ process call_hotspots {
 	tag "${id}"
 	//label 'high_mem'
 	publishDir "${params.outdir}/${id}", pattern: "${id}*"
-    memory { 60.GB + 20.GB * task.attempt }
+    memory { 80.GB + 20.GB * task.attempt }
 
 	cpus 6
     conda "/home/sabramov/miniconda3/envs/jupyterlab"
@@ -61,7 +61,7 @@ process call_hotspots {
 	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
-        tuple val(id), path("${id}.*.parquet"), emit: tmp_files
+        tuple val(id), path("${id}.*.parquet"), path("${id}.*.chr*") emit: tmp_files
         tuple val(id), path("${id}.hotspots*"), path("${id}.peaks*"), emit: peaks_hotspots
 
 	script:
@@ -73,7 +73,8 @@ process call_hotspots {
         --fdrs ${fdrs} \
         --mappable_bases /net/seq/data2/projects/sabramov/SuperIndex/GRCh38_no_alts.K36.center_sites.n100.nuclear.merged.bed.gz \
         --chrom_sizes ${params.chrom_sizes}  \
-        --cpus ${task.cpus}
+        --cpus ${task.cpus} \
+        --save_density
 
     # TODO rm pvals smoothed_signal parquets
 	"""
