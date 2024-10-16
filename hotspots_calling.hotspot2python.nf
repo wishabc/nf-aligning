@@ -61,7 +61,7 @@ process call_hotspots {
 	    tuple val(id), path(bam_file), path(bam_file_index)
 
 	output:
-        tuple val(id), path("${id}.*.parquet"), path("${id}.*.chr*"), emit: tmp_files
+        tuple val(id), path("${id}.*.parquet"), emit: tmp_files
         tuple val(id), path("${id}.hotspots*"), path("${id}.peaks*"), emit: peaks_hotspots
 
 	script:
