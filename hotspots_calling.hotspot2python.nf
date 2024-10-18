@@ -68,7 +68,7 @@ process call_hotspots {
 	script:
     fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
 	"""
-    python3 ~/packages/hotspot2/src/hotspot2/track_memory.py \
+    hotspot3 \
         ${id} \
         --bam ${bam_file} \
         --fdrs ${fdrs} \
