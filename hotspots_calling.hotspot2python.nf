@@ -75,7 +75,8 @@ process call_hotspots {
         --mappable_bases ${params.mappable_bases} \
         --chrom_sizes ${params.chrom_sizes}  \
         --cpus ${task.cpus} \
-        --save_density
+        --save_density \
+        --debug
 
     # TODO rm pvals smoothed_signal parquets
 	"""
