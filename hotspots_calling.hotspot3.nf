@@ -67,6 +67,7 @@ process call_hotspots {
 
 	script:
     fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
+    save_debug = params.save_debug ? "--debug" : ""
 	"""
     hotspot3 \
         ${id} \
@@ -76,9 +77,11 @@ process call_hotspots {
         --chrom_sizes ${params.chrom_sizes}  \
         --cpus ${task.cpus} \
         --save_density \
-        --debug
+        --save_debug
 
-    # TODO rm pvals smoothed_signal parquets
+    if [ ${save_debug} == "" ]; then
+        rm -r ${id}.pvals.parquet ${id}.smoothed_signal.parquet
+    fi
 	"""
 }
 
