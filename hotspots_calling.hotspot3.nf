@@ -74,7 +74,7 @@ process call_hotspots {
         --bam ${bam_file} \
         --fdrs ${fdrs} \
         --mappable_bases ${params.mappable_bases} \
-        --chrom_sizes ${params.chrom_sizes}  \
+        --chrom_sizes ${params.nuclear_chrom_szies}  \
         --cpus ${task.cpus} \
         --save_density \
         ${save_debug}
