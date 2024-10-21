@@ -79,7 +79,7 @@ process call_hotspots {
         --save_density \
         ${save_debug}
 
-    if [ ${save_debug} == "" ]; then
+    if [ "${save_debug}" == "" ]; then
         rm -r ${id}.pvals.parquet ${id}.smoothed_signal.parquet
     fi
 	"""
@@ -100,7 +100,15 @@ workflow callHotspots {
 workflow {
 	Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-		| map(row -> tuple( row.ag_id, row.cram_file, row.cram_index ?: "${row.cram_file}.crai"))
+		| map(row -> tuple(
+                row.ag_id,
+                row.cram_file,
+                row.cram_index ?: "${row.cram_file}.crai",
+                file("${params.outdir}/${row.ag_id}/${row.ag_id}.total_cutcounts")
+            )
+        )
+        | filter { !it[3].exists() } // TMP hotfix to delete tmp files
+        | map(it -> tuple(it[0], it[1], it[2]))
         | callHotspots
 }
 
