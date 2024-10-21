@@ -52,7 +52,7 @@ process call_hotspots {
 	tag "${id}"
 	//label 'high_mem'
 	publishDir "${params.outdir}/${id}", pattern: "${id}*"
-    memory { 80.GB + 20.GB * task.attempt }
+    memory { 60.GB + 20.GB * task.attempt }
 
 	cpus 6
     conda "/home/sabramov/miniconda3/envs/jupyterlab"
@@ -77,7 +77,7 @@ process call_hotspots {
         --chrom_sizes ${params.chrom_sizes}  \
         --cpus ${task.cpus} \
         --save_density \
-        --save_debug
+        ${save_debug}
 
     if [ ${save_debug} == "" ]; then
         rm -r ${id}.pvals.parquet ${id}.smoothed_signal.parquet
