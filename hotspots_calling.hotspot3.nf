@@ -63,7 +63,7 @@ process call_hotspots {
 	output:
         tuple val(id), path("${id}.*"), emit: all
         tuple val(id), path("fdr*/*"), emit: peaks
-        tuple val(id), path(debug), emit: debug
+        tuple val(id), path("debug"), emit: debug
 
 	script:
     fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
@@ -81,7 +81,7 @@ process call_hotspots {
         ${save_debug} 2>&1 > ${id}.peak_calling.log
 
     if [ "${save_debug}" == "" ]; then
-        rm debug/*
+        rm -r debug/*
     fi
 	"""
 }
