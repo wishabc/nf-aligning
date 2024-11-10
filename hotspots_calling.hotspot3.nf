@@ -62,8 +62,8 @@ process call_hotspots {
 
 	output:
         tuple val(id), path("${id}.*"), emit: all
-        tuple val(id), path("${id}.*.parquet"), emit: tmp_files
-        tuple val(id), path("${id}.hotspots*"), path("${id}.peaks*"), emit: peaks_hotspots
+        tuple val(id), path("fdr*/*"), emit: peaks
+        tuple val(id), path(debug), emit: debug
 
 	script:
     fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
@@ -77,10 +77,11 @@ process call_hotspots {
         --chrom_sizes ${params.nuclear_chrom_szies}  \
         --cpus ${task.cpus} \
         --save_density \
-        ${save_debug}
+        --debug
+        ${save_debug} 2>&1 > ${id}.peak_calling.log
 
     if [ "${save_debug}" == "" ]; then
-        rm -r ${id}.pvals.parquet ${id}.smoothed_signal.parquet
+        rm debug/*
     fi
 	"""
 }
