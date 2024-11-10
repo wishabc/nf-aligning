@@ -51,7 +51,7 @@ process spot_score {
 process call_hotspots {
 	tag "${id}"
 	//label 'high_mem'
-	publishDir "${params.outdir}/${id}", pattern: "${id}*"
+	publishDir "${params.outdir}/${id}"
     memory { 60.GB + 20.GB * task.attempt }
 
 	cpus 6
@@ -93,7 +93,7 @@ workflow callHotspots {
         out = bam_files
             | call_hotspots
 	emit:
-		out.peaks_hotspots
+		out.peaks
 
 }
 
