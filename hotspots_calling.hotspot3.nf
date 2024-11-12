@@ -86,6 +86,45 @@ process call_hotspots {
 	"""
 }
 
+process call_hotspots_from_pvals {
+	tag "${id}"
+	//label 'high_mem'
+	publishDir "${params.outdir}/${id}"
+    memory { 60.GB + 20.GB * task.attempt }
+
+	cpus 10
+    conda "/home/sabramov/miniconda3/envs/jupyterlab"
+
+	input:
+	    tuple val(id), path(cutcounts), path(cutcounts_index), path(total_cutcounts), path(pvals_parquet)
+
+	output:
+        tuple val(id), path("${id}.*"), emit: all
+        tuple val(id), path("fdr*/*"), emit: peaks
+        tuple val(id), path("debug"), emit: debugging
+
+	script:
+    fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
+    save_debug = params.save_debug ? "--debug" : ""
+	"""
+    hotspot3 \
+        ${id} \
+        --cutcounts ${cutcounts} \
+        --fdrs ${fdrs} \
+        --mappable_bases ${params.mappable_bases} \
+        --chrom_sizes ${params.nuclear_chrom_szies}  \
+        --pvals_parquet ${pvals_parquet} \
+        --cpus ${task.cpus} \
+        --save_density \
+        --debug
+        ${save_debug} 2>&1 > ${id}.peak_calling.log
+
+    if [ "${save_debug}" == "" ]; then
+        rm -r debug/*
+    fi
+	"""
+}
+
 workflow callHotspots {
 	take:
 		bam_files
@@ -115,6 +154,19 @@ workflow {
 
 
 // defunc
+workflow debug {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+		| map(row -> tuple(
+                row.ag_id,
+                file("${params.outdir}/${row.ag_id}/${row.ag_id}.cutcounts.bed.gz"),
+                file("${params.outdir}/${row.ag_id}/${row.ag_id}.cutcounts.bed.gz.tbi"),
+                file("${params.outdir}/${row.ag_id}/${row.ag_id}.total_cutcounts")
+                file("${params.outdir}/${row.ag_id}/${row.ag_id}.pvals_parquet")
+            )
+        )
+        | call_hotspots_from_pvals
+}
 
 workflow hotspotLowerFdr {
     fdrs = Channel.of(params.hotspot2_fdr)
