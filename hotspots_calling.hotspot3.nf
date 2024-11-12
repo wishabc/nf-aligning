@@ -154,14 +154,14 @@ workflow {
 
 
 // defunc
-workflow debug {
+workflow tmp_debug {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(
                 row.ag_id,
                 file("${params.outdir}/${row.ag_id}/${row.ag_id}.cutcounts.bed.gz"),
                 file("${params.outdir}/${row.ag_id}/${row.ag_id}.cutcounts.bed.gz.tbi"),
-                file("${params.outdir}/${row.ag_id}/${row.ag_id}.total_cutcounts")
+                file("${params.outdir}/${row.ag_id}/${row.ag_id}.total_cutcounts"),
                 file("${params.outdir}/${row.ag_id}/${row.ag_id}.pvals_parquet")
             )
         )
