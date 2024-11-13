@@ -115,7 +115,6 @@ process call_hotspots_from_pvals {
         --chrom_sizes ${params.nuclear_chrom_szies}  \
         --pvals_parquet ${pvals_parquet} \
         --cpus ${task.cpus} \
-        --save_density \
         --debug 2>&1 > ${id}.peak_calling.log
 
     if [ "${save_debug}" == "" ]; then
