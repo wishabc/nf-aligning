@@ -161,7 +161,7 @@ workflow tmp_debug {
                 file("${params.outdir}/${row.ag_id}/${row.ag_id}.cutcounts.bed.gz"),
                 file("${params.outdir}/${row.ag_id}/${row.ag_id}.cutcounts.bed.gz.tbi"),
                 file("${params.outdir}/${row.ag_id}/${row.ag_id}.total_cutcounts"),
-                file("${params.outdir}/${row.ag_id}/${row.ag_id}.pvals_parquet")
+                file("${params.outdir}/${row.ag_id}/${row.ag_id}.pvals.parquet")
             )
         )
         | call_hotspots_from_pvals
