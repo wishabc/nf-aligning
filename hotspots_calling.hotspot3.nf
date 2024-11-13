@@ -90,9 +90,9 @@ process call_hotspots_from_pvals {
 	tag "${id}"
 	//label 'high_mem'
 	publishDir "${params.outdir}/${id}"
-    memory { 60.GB + 20.GB * task.attempt }
+    memory { 50.GB + 20.GB * task.attempt }
 
-	cpus 10
+	cpus 8
     conda "/home/sabramov/miniconda3/envs/jupyterlab"
 
 	input:
