@@ -116,8 +116,7 @@ process call_hotspots_from_pvals {
         --pvals_parquet ${pvals_parquet} \
         --cpus ${task.cpus} \
         --save_density \
-        --debug
-        ${save_debug} 2>&1 > ${id}.peak_calling.log
+        --debug 2>&1 > ${id}.peak_calling.log
 
     if [ "${save_debug}" == "" ]; then
         rm -r debug/*
