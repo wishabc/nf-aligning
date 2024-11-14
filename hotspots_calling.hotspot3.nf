@@ -77,8 +77,7 @@ process call_hotspots {
         --chrom_sizes ${params.nuclear_chrom_szies}  \
         --cpus ${task.cpus} \
         --save_density \
-        --debug
-        ${save_debug} 2>&1 > ${id}.peak_calling.log
+        --debug 2>&1 > ${id}.peak_calling.log
 
     if [ "${save_debug}" == "" ]; then
         rm -r debug/*
