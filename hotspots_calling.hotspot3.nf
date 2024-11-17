@@ -77,6 +77,7 @@ process call_hotspots {
         --chrom_sizes ${params.nuclear_chrom_szies}  \
         --cpus ${task.cpus} \
         --save_density \
+        --signal_threshold 0.995 \
         --debug 2>&1 > ${id}.peak_calling.log
 
     if [ "${save_debug}" == "" ]; then
