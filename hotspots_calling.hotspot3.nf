@@ -108,7 +108,7 @@ process call_hotspots_from_cutcounts {
 	"""
     hotspot3 \
         ${id} \
-        --cutcounts ${bam_file} \
+        --cutcounts ${cutcounts} \
         --fdrs ${fdrs} \
         --mappable_bases ${params.mappable_bases} \
         --chrom_sizes ${params.nuclear_chrom_szies}  \
