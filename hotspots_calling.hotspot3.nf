@@ -106,12 +106,14 @@ process call_hotspots_from_cutcounts {
     fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
     save_debug = params.save_debug ? "--debug" : ""
 	"""
+    mkdir debug
     hotspot3 \
         ${id} \
         --cutcounts ${cutcounts} \
         --fdrs ${fdrs} \
         --mappable_bases ${params.mappable_bases} \
         --chrom_sizes ${params.nuclear_chrom_szies}  \
+        --tempdir debug \
         --cpus ${task.cpus} \
         --save_density \
         --debug 2>&1 > ${id}.peak_calling.log
