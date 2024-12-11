@@ -47,7 +47,7 @@ process spot_score {
 }
 
 
-// Need to contenirize at some point
+// Need to containerize at some point
 process call_hotspots {
 	tag "${id}"
 	//label 'high_mem'
@@ -66,7 +66,7 @@ process call_hotspots {
         tuple val(id), path("debug"), emit: debug
 
 	script:
-    fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
+    fdrs = params.fdrs.tokenize(',').join(' ')
     save_debug = params.save_debug ? "--debug" : ""
 	"""
     hotspot3 \
@@ -74,9 +74,10 @@ process call_hotspots {
         --bam ${bam_file} \
         --fdrs ${fdrs} \
         --mappable_bases ${params.mappable_bases} \
-        --chrom_sizes ${params.nuclear_chrom_szies}  \
+        --chrom_sizes ${params.nuclear_chrom_sizes}  \
         --cpus ${task.cpus} \
         --save_density \
+        --reference ${params.genome_fasta_file} \
         --debug 2>&1 > ${id}.peak_calling.log
 
     if [ "${save_debug}" == "" ]; then
@@ -103,7 +104,7 @@ process call_hotspots_from_cutcounts {
         tuple val(id), path("debug"), emit: debug
 
 	script:
-    fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
+    fdrs = params.fdrs.tokenize(',').join(' ')
     save_debug = params.save_debug ? "--debug" : ""
 	"""
     mkdir debug
@@ -112,7 +113,7 @@ process call_hotspots_from_cutcounts {
         --cutcounts ${cutcounts} \
         --fdrs ${fdrs} \
         --mappable_bases ${params.mappable_bases} \
-        --chrom_sizes ${params.nuclear_chrom_szies}  \
+        --chrom_sizes ${params.nuclear_chrom_sizes}  \
         --tempdir debug \
         --cpus ${task.cpus} \
         --save_density \
@@ -142,7 +143,7 @@ process call_hotspots_from_pvals {
         tuple val(id), path("debug"), emit: debugging
 
 	script:
-    fdrs = params.hotspot2_fdr.tokenize(',').join(' ')
+    fdrs = params.fdrs.tokenize(',').join(' ')
     save_debug = params.save_debug ? "--debug" : ""
 	"""
     hotspot3 \
@@ -150,7 +151,7 @@ process call_hotspots_from_pvals {
         --cutcounts ${cutcounts} \
         --fdrs ${fdrs} \
         --mappable_bases ${params.mappable_bases} \
-        --chrom_sizes ${params.nuclear_chrom_szies}  \
+        --chrom_sizes ${params.nuclear_chrom_sizes}  \
         --pvals_parquet ${pvals_parquet} \
         --cpus ${task.cpus} \
         --debug 2>&1 > ${id}.peak_calling.log
@@ -218,61 +219,3 @@ workflow fromCutcounts {
         )
         | call_hotspots_from_cutcounts
 }
-
-workflow hotspotLowerFdr {
-    fdrs = Channel.of(params.hotspot2_fdr)
-            | flatMap(it -> it.toString().tokenize(','))
-            | map { it as Float }
-    Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-		| map(
-            row -> tuple(
-                row.ag_id,
-                file(row.allcalls),
-                file(row.cutcounts),
-                file(row.cleavage_total)
-            )
-        )
-        | combine(fdrs)
-        | map(it -> tuple(it[4], *it[0..3]))
-        | hotspots_other_fdr
-}
-
-// workflow hotspots {
-// 	params.basepath = "/net/seq/data2/projects/sabramov/ENCODE4/atac_aligning/output"
-// 	metadata = Channel.fromPath(params.samples_file)
-// 		| splitCsv(header:true, sep:'\t')
-// 		| map(row -> tuple(
-// 			row.sample_id, 
-// 			file("${params.basepath}/${row.sample_id}/${row.sample_id}.filtered.cram"),
-// 			file("${params.basepath}/${row.sample_id}/${row.sample_id}.filtered.cram.crai"),
-// 			))
-// 		| filter { it[1].exists() }
-// 	    | callHotspots
-// }
-
-// process calc_different_fdr {
-// 	tag "${id}"
-//     publishDir "${params.outdir}/${id}", pattern: "${name}"
-// 	label 'high_mem'
-//     module "modwt/1.0:kentutil/302:bedops/2.4.35-typical:bedtools/2.25.0:samtools/1.3:hotspot2/2.1.1"
-
-//     input:
-// 	    tuple val(id), path(allcalls_file)
-
-//     output:
-//         tuple val(id), path(name)
-    
-//     script:
-//     name = "${id}.hotspots.fdr0.05.starch"
-//     """
-//     hsmerge.sh -f 0.05 -m 50 ${allcalls_file} ${name}
-//     """
-// }
-
-// workflow tmp {
-//     Channel.fromPath(params.samples_file)
-//         | splitCsv(header:true, sep:'\t')
-// 		| map(row -> row.ag_id)
-//         | map(it -> tuple(it, file("/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/matrices/downsampled_projected_atac/test_atac_peaks/output/${it}.allcalls.starch")))
-// }
