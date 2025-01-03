@@ -261,6 +261,8 @@ process normalize_density {
 
 process run_preseq {
     conda "/home/sabramov/miniconda3/envs/super-index"
+    tag "${ag_id}"
+    publishDir "${params.outdir}"
 
     input:
         tuple val(ag_id), path(cram_file), path(cram_file_index)
