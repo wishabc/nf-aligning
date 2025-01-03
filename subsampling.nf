@@ -256,3 +256,33 @@ process normalize_density {
     wigToBigWig -clip tmp.wig ${params.chrom_sizes} ${name}
     """  
 }
+
+
+
+process run_preseq {
+    conda "/home/sabramov/miniconda3/envs/super-index"
+
+    input:
+        tuple val(ag_id), path(cram_file), path(cram_file_index)
+    
+    output:
+        tuple val(ag_id), path(name)
+    
+    script:
+    name = "${ag_id}.preseq_hist.txt"
+    """
+    preseq c_curve -B -P -v ${cram_file} 2>&1 > ${name}
+    """
+}
+
+workflow preseq {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.ag_id,
+            file(row.cram_file),
+            file(row.cram_index)
+            )
+        )
+        | run_preseq
+}
