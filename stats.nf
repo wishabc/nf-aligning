@@ -56,16 +56,16 @@ process collect_basic_stats {
     script:
     name = "${ag_id}.sequencing_stats.txt"
     """
-    echo -e "name\tvalue" > ${name}
-    echo -e "filtered_aligned\t\$(samtools view -c ${cram_file})" >> ${name}
-    echo -e "duplicates\t\$(samtools view -f 1024 -c ${cram_file})" >> ${name}
+    echo -e "ag_id\tname\tvalue" > ${name}
+    echo -e "${ag_id}\tfiltered_aligned\t\$(samtools view -c ${cram_file})" >> ${name}
+    echo -e "${ag_id}\tduplicates\t\$(samtools view -f 1024 -c ${cram_file})" >> ${name}
     """
 }
 
 process run_preseq {
     conda "/home/sabramov/miniconda3/envs/super-index"
     tag "${ag_id}"
-    publishDir "${params.outdir}"
+    // publishDir "${params.outdir}"
 
     input:
         tuple val(ag_id), path(cram_file), path(cram_file_index), val(read_type)
@@ -94,6 +94,13 @@ workflow {
             )
         )
         | collect_basic_stats
+        | map(it -> it[1])
+        | collectFile(
+            storeDir: params.outdir,
+            name: "basic_stats.tsv",
+            keepHeader: true,
+            skip: 1
+        )
 }
 
 workflow preseq {
