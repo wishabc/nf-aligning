@@ -64,7 +64,7 @@ process collect_basic_stats {
 
 process run_preseq {
     conda "/home/sabramov/miniconda3/envs/super-index"
-    tag "${ag_id}"
+    tag "${ag_id}:${read_type}"
     // publishDir "${params.outdir}"
 
     input:
