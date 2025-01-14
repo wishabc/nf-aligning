@@ -132,7 +132,7 @@ workflow subsampleTest {
         | filter_nuclear
         | subsample_with_pairs
         | map(it -> tuple(it[0], it[1], it[2]))
-        | (percent_dup & callHotspots)
+        | (percent_dup)
 
     // bams 
     //     | preprocessBams
