@@ -125,6 +125,31 @@ process subsample_with_pairs {
     """
 }
 
+process subsample_with_pairs_frac {
+    conda params.conda
+    tag "${ag_id}"
+    cpus 2
+    scratch true
+    publishDir "${params.outdir}/${ag_id}"
+
+    input:
+        tuple val(ag_id), path(cram_file), path(cram_file_index), val(frac)
+    
+    output:
+        tuple val(ag_id), path(name), path("${name}.bai")
+
+    script:
+    name = "${ag_id}.subsampled_pairs.bam"
+    """
+    samtools view ${cram_file} -h \
+        --subsample-seed 42 \
+        --reference ${params.genome_fasta_file} \
+        --subsample ${frac} \
+        | samtools sort -@${task.cpus} > ${name}
+    samtools index ${name}
+    """
+}
+
 workflow subsampleTest {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
@@ -133,6 +158,23 @@ workflow subsampleTest {
         | subsample_with_pairs
         | map(it -> tuple(it[0], it[1], it[2]))
         | (percent_dup)
+
+    // bams 
+    //     | preprocessBams
+    //     | spot_score
+}
+
+workflow subsampleTest2 {
+    input_data = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, file(row.cram_file), file(row.cram_index), row.frac))
+    
+    input_data
+        | map(it -> tuple(it[0], it[1], it[2]))
+        | filter_nuclear
+        | join(input_data.map(it -> tuple(it[0], it[3])))
+        | subsample_with_pairs_frac
+        | percent_dup
 
     // bams 
     //     | preprocessBams
