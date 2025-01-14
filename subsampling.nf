@@ -1,5 +1,6 @@
 include { callHotspots; spot_score } from "./hotspots_calling"
 include { density_files } from "./aligning"
+include { percent_dup } from "./stats"
 params.conda = "/home/sabramov/miniconda3/envs/babachi"
 
 
