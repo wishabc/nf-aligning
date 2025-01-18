@@ -3,7 +3,7 @@ nextflow.enable.dsl = 2
 include { set_key_for_group_tuple } from "./aligning"
 
 def remove_ambiguous_bases(adapter) {
-    x = adapter.takeWhile { it in ['A', 'C', 'T', 'G'] }
+    def x = adapter?.takeWhile { it in ['A', 'C', 'T', 'G'] } ?: ""
     if (x != adapter) {
         println("WARN: Adapter '${adapter}' contains ambiguous bases, using '${x}' instead")
     }
