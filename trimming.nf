@@ -69,14 +69,21 @@ workflow trimReads {
 
 workflow trimReadsFromFile {
     main:
-        reads_ch = Channel.fromPath(params.samples_file)
-            .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.sample_id, row.align_id, row.reads1,
-                                row.type == 'paired' ? row.reads2 : file('./'),
-                                remove_ambiguous_bases(row.adapterP7),
-                                row.type == 'paired' ? remove_ambiguous_bases(row.adapterP5) : "",
-                                row.type == 'paired'))
-        trimReads(set_key_for_group_tuple(reads_ch))
+        Channel.fromPath(params.samples_file)
+            | splitCsv(header:true, sep:'\t')
+            | map(
+                row -> tuple(
+                    row.sample_id,
+                    row.align_id,
+                    row.reads1,
+                    row.type == 'paired' ? row.reads2 : file('./'),
+                    remove_ambiguous_bases(row.adapterP7),
+                    row.type == 'paired' ? remove_ambiguous_bases(row.adapterP5) : "",
+                    row.type == 'paired'
+                )
+            )
+            | set_key_for_group_tuple
+            | trimReads
     emit:
         trimReads.out
 }

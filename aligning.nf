@@ -97,62 +97,60 @@ process align_reads_paired {
 }
 
 process filter_and_sort {
-  scratch true
-  cpus params.threads
-  tag "${group_key}"
-  container "${params.container}"
-  containerOptions nuclearChromsContainer
-  
-  input:
-    tuple val(group_key), path(bam_file)
+    scratch true
+    cpus params.threads
+    tag "${group_key}"
+    container "${params.container}"
+    containerOptions nuclearChromsContainer
 
-  output:
-    tuple val(group_key), path(name)
-  
-  script:
-  name = "${bam_file.baseName}.sorted.bam"
-  """
-  # filter
-  python3 $projectDir/bin/filter_reads.py \
-    ${bam_file} \
-    filtered.bam \
-    ${params.nuclear_chroms}
-  # sort
-  samtools sort \
-    -l 0 -m 1G -@"${task.cpus}" filtered.bam \
-    > ${name}
-  """
+    input:
+        tuple val(group_key), path(bam_file)
+
+    output:
+        tuple val(group_key), path(name)
+
+    script:
+    name = "${bam_file.baseName}.sorted.bam"
+    """
+    # filter
+    python3 $projectDir/bin/filter_reads.py \
+        ${bam_file} \
+        filtered.bam \
+        ${params.nuclear_chroms}
+    # sort
+    samtools sort -@"${task.cpus}" filtered.bam > ${name}
+    """
 }
 /*
  * Step 3: Merge alignments into one big ol' file
  */
 process merge_bam {
-  tag "${group_key}"
-  container "${params.container}"
-  scratch true
-  cpus 2
-  errorStrategy "ignore"
+    tag "${group_key}"
+    container "${params.container}"
+    scratch true
+    cpus 2
+    errorStrategy "ignore"
 
-  input:
-    tuple val(group_key), path(bamfiles)
+    input:
+        tuple val(group_key), path(bamfiles)
 
-  output:
-    tuple val(group_key), file(name), path("${name}.bai")
+    output:
+        tuple val(group_key), file(name), path("${name}.bai")
 
-  script:
-  name = "${group_key}.bam"
-  if (group_key.size > 1) {
+    script:
+    name = "${group_key}.bam"
+    if (group_key.size > 1) {
     """
     samtools merge merged.bam ${bamfiles}
     samtools sort -@"${task.cpus}" merged.bam > ${name}
     samtools index ${name}
     """
-  } else {
+    } else {
     """
     ln -s ${bamfiles} ${name} 
     samtools index ${name}
     """
-  }
+    }
 }
 
 /*
@@ -175,19 +173,20 @@ process mark_duplicates {
   script:
   name = "${sample_id}.marked.bam"
   metric_name = "${sample_id}.MarkDuplicates.picard"
-  """
-  picard RevertOriginalBaseQualitiesAndAddMateCigar \
-    INPUT="${merged_bam}" OUTPUT=cigar.bam \
-    VALIDATION_STRINGENCY=SILENT RESTORE_ORIGINAL_QUALITIES=false \
-    SORT_ORDER=coordinate MAX_RECORDS_TO_EXAMINE=0 \
-    TMP_DIR=${workDir}
-  picard MarkDuplicatesWithMateCigar \
-      INPUT=cigar.bam OUTPUT=${name} \
-      MINIMUM_DISTANCE=300 \
-      TMP_DIR=${workDir} \
-      METRICS_FILE=${metric_name} ASSUME_SORTED=true VALIDATION_STRINGENCY=SILENT \
-      READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
-  samtools index ${name}
+    """
+    picard RevertOriginalBaseQualitiesAndAddMateCigar \
+        INPUT="${merged_bam}" OUTPUT=cigar.bam \
+        VALIDATION_STRINGENCY=SILENT RESTORE_ORIGINAL_QUALITIES=false \
+        SORT_ORDER=coordinate MAX_RECORDS_TO_EXAMINE=0 \
+        TMP_DIR=${workDir}
+
+    picard MarkDuplicatesWithMateCigar \
+        INPUT=cigar.bam OUTPUT=${name} \
+        MINIMUM_DISTANCE=300 \
+        TMP_DIR=${workDir} \
+        METRICS_FILE=${metric_name} ASSUME_SORTED=true VALIDATION_STRINGENCY=SILENT \
+        READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
+    samtools index ${name}
   """
 }
 
@@ -195,28 +194,36 @@ process mark_duplicates {
 Step 5: Filter down to nuclear reads passing filter
 **/
 process filter_nuclear {
-  container "${params.container}"
-  containerOptions nuclearChromsContainer
-  tag "${sample_id}"
-  scratch true
+    container "${params.container}"
+    containerOptions nuclearChromsContainer
+    tag "${sample_id}"
+    scratch true
 
-  input:
-    tuple val(sample_id), path(bam), path(bam_index), path(picard_dup_file) 
+    input:
+        tuple val(sample_id), path(bam), path(bam_index), path(picard_dup_file) 
 
-  output:
-    tuple val(sample_id), path("${name}"), path("${name}.bai")
+    output:
+        tuple val(sample_id), path("${name}"), path("${name}.bai")
 
-  script:
-  name = "${sample_id}.filtered.bam"
-  """
-  samtools view -b -F 512 ${bam} > filtered.bam
-  samtools index filtered.bam
-  cat "${params.nuclear_chroms}" \
-  | xargs samtools view -b filtered.bam > ${name}
+    script:
+    name = "${sample_id}.filtered.bam"
+    """
+    samtools view -b -F 516 ${bam} > filtered.bam # mapped and passing QC
+    samtools index filtered.bam
 
-  samtools index ${name}
-  """
+    if [[ "${params.save_cram_mode}"" == "nuclear" ]]; then
+        cat "${params.nuclear_chroms}" \
+            | xargs samtools view -b filtered.bam > ${name}
+
+        samtools index ${name}
+    else
+        mv filtered.bam ${name}
+        mv filtered.bam.bai ${name}.bai
+    fi
+    """
 }
+
+
 // Works only with paired end data
 process insert_size {
   tag "${sample_id}"
@@ -254,6 +261,8 @@ process insert_size {
     ASSUME_SORTED=true
   """
 }
+
+
 process macs2 {
   tag "${sample_id}"
   publishDir "${params.outdir}/${sample_id}/stats"
@@ -284,51 +293,7 @@ process macs2 {
     --keep-dup all --call-summits > "macs2.${sample_id}.err"
   """
 }
-process density_files {
-  publishDir "${params.outdir}/${sample_id}/stats"
-  tag "${sample_id}"
-  errorStrategy 'ignore'
-  container "${params.container}"
-  label "high_mem"
-  containerOptions "${chromSizesContainer} ${get_container(params.density_buckets)}"
 
-  input:
-    tuple val(sample_id), path(bam), path(bai)
-
-  output:
-    tuple val(sample_id), path(name), emit: starch
-    tuple val(sample_id), path("${sample_id}.density.bw"), emit: bigwig
-    tuple val(sample_id), path("${sample_id}.density.bed.bgz"), path("${sample_id}.density.bed.bgz.tbi"), emit: bgzip
-
-  script:
-  name = "${sample_id}.density.bed.starch"
-  """
-  bam2bed -d \
-    < "${bam}" \
-    | cut -f1-6 \
-    | awk '{ if( \$6=="+" ){ s=\$2; e=\$2+1 } else { s=\$3-1; e=\$3 } print \$1 "\t" s "\t" e "\tid\t" 1 }' \
-    | sort-bed - \
-    > sample.bed
-  
-  unstarch "${params.density_buckets}" \
-    | bedmap --faster --echo --count --delim "\t" - sample.bed \
-    | awk -v OFS="\t" \
-        -v binI=${params.density_step_size} \
-        -v win="${params.density_window_width}" \
-        'BEGIN{ halfBin=binI/2; shiftFactor=win-halfBin } { 
-            print \$1,\$2+shiftFactor,\$3-shiftFactor,"id",\$4}' \
-    | starch - \
-    > "${name}"
-    
-  unstarch "${name}" \
-    | awk -v binI="${params.density_step_size}" \
-        -f "${moduleDir}/bin/bedToWig.awk" > density.wig
-  wigToBigWig -clip density.wig "${params.chrom_sizes}" ${sample_id}.density.bw
-  
-  unstarch "${name}" | bgzip -c > ${sample_id}.density.bed.bgz
-  tabix -p bed ${sample_id}.density.bed.bgz
-  """
-}
 
 /**
 Step 6: Convert Filtered Bam to cram file
@@ -360,59 +325,56 @@ process convert_to_cram {
 
 
 workflow alignBwa {
-  take:
-    trimmed_reads
-  main:
-    reads_divided = trimmed_reads.branch{
-      paired: it[3]
-      single: true
-    }
-    paired_bam = align_reads_paired(reads_divided.paired.map(it -> tuple(it[0], it[1], it[2])))
-    single_bam = align_reads_single(reads_divided.single.map(it -> tuple(it[0], it[1])))
-    all_bam = paired_bam.mix(single_bam)
-  emit:
-    all_bam
+    take:
+        trimmed_reads
+    main:
+        reads_divided = trimmed_reads.branch{
+            paired: it[3]
+            single: true
+        }
+        paired_bam = reads_divided.paired
+            | map(it -> tuple(it[0], it[1], it[2]))
+            | align_reads_paired
+
+        all_bam = reads_divided.single 
+            | map(it -> tuple(it[0], it[1]))
+            | align_reads_single
+            | mix(paired_bam)
+    emit:
+        all_bam
 }
 
 
 workflow alignReads {
-  take:
-    trimmed_reads
-  main:
-    filtered_bam_files = trimmed_reads
-        | alignBwa
-        | filter_and_sort
-        | groupTuple()
-        | merge_bam
-        | mark_duplicates 
-        | filter_nuclear
+    take:
+        trimmed_reads
+    main:
+        filtered_bam_files = trimmed_reads
+            | alignBwa
+            | filter_and_sort
+            | groupTuple()
+            | merge_bam
+            | mark_duplicates 
+            | filter_nuclear
 
-    is_paired_dict = trimmed_reads
-        | map(it -> tuple(it[0], it[3]))
-        | distinct()
-    
-    filtered_bam_files
-        | join(is_paired_dict)
-        | (insert_size & macs2)
+        is_paired_dict = trimmed_reads
+            | map(it -> tuple(it[0], it[3]))
+            | distinct()
+        
+        filtered_bam_files
+            | join(is_paired_dict)
+            | (insert_size & macs2)
 
-    filtered_bam_files
-        | (density_files & convert_to_cram)
-  emit:
-    convert_to_cram.out
+        filtered_bam_files
+            | convert_to_cram
+    emit:
+        convert_to_cram.out
 }
 
 workflow {
-    fastq_trimmed_paired = Channel
-      .fromPath(params.samples_file)
-      .splitCsv(header:true, sep:'\t')
-		  .map(row -> tuple(row.sample_id, row.reads1, row.reads2, row.type == 'paired'))
-    alignReads(set_key_for_group_tuple(fastq_trimmed_paired))
-}
-
-
-workflow calcDensity {
-    Channel.fromPath(params.samples_file)
+    fastq_trimmed_paired = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, row.cram_file, "${row.cram_file}.crai"))
-        | density_files
+	    | map(row -> tuple(row.sample_id, row.reads1, row.reads2, row.type == 'paired'))
+        | set_key_for_group_tuple
+        | alignReads
 }
