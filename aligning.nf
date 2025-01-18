@@ -211,7 +211,7 @@ process filter_nuclear {
     samtools view -b -F 516 ${bam} > filtered.bam # mapped and passing QC
     samtools index filtered.bam
 
-    if [[ "${params.save_cram_mode}"" == "nuclear" ]]; then
+    if [[ "${params.save_cram_mode}" == "nuclear" ]]; then
         cat "${params.nuclear_chroms}" \
             | xargs samtools view -b filtered.bam > ${name}
 
