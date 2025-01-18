@@ -4,7 +4,7 @@ include { set_key_for_group_tuple } from "./aligning"
 
 def remove_ambiguous_bases(adapter) {
     def x = adapter ? adapter.takeWhile { it in ['A', 'C', 'T', 'G'] } : ""
-    if (x != adapter) {
+    if (x && (x != adapter)) {
         println("WARN: Adapter '${adapter}' contains ambiguous bases, using '${x}' instead")
     }
     return x
