@@ -77,8 +77,8 @@ workflow trimReadsFromFile {
                     row.align_id,
                     row.reads1,
                     row.type == 'paired' ? row.reads2 : file('./'),
-                    remove_ambiguous_bases(row.adapterP7),
-                    row.type == 'paired' ? remove_ambiguous_bases(row.adapterP5) : "",
+                    remove_ambiguous_bases(row?.adapterP7),
+                    row.type == 'paired' ? remove_ambiguous_bases(row?.adapterP5) : "",
                     row.type == 'paired'
                 )
             )
