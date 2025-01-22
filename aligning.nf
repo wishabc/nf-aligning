@@ -228,7 +228,6 @@ process filter_nuclear {
 // Works only with paired end data
 process insert_size {
   tag "${sample_id}"
-  publishDir "${params.outdir}"
   scratch true
   container "${params.container}"
   publishDir "${params.outdir}/${sample_id}/stats"

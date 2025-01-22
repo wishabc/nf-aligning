@@ -45,7 +45,7 @@ process percent_dup {
 process collect_basic_stats {
     conda params.conda
     tag "${ag_id}"
-    publishDir "${params.outdir}"
+    publishDir "${params.outdir}/${ag_id}"
 
     input:
         tuple val(ag_id), path(cram_file), path(cram_file_index)
@@ -65,7 +65,7 @@ process collect_basic_stats {
 process total_bam_stats {
     conda params.conda
     tag "${ag_id}"
-    publishDir "${params.outdir}"
+    publishDir "${params.outdir}/${ag_id}"
 
      input:
         tuple val(ag_id), path(bam_file), path(bam_index)
@@ -85,7 +85,7 @@ process total_bam_stats {
 process run_preseq {
     conda "/home/sabramov/miniconda3/envs/super-index"
     tag "${ag_id}:${read_type}"
-    // publishDir "${params.outdir}"
+    publishDir "${params.outdir}"
 
     input:
         tuple val(ag_id), path(cram_file), path(cram_file_index), val(read_type)
