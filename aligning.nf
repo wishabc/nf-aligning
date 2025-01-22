@@ -1,4 +1,5 @@
 #!/usr/bin/env nextflow
+include { total_bam_stats } from "./stats"
 nextflow.enable.dsl = 2
 
 // Workaround, so when we groupTuple later, 
@@ -357,6 +358,9 @@ workflow alignReads {
             | mark_duplicates 
             | filter_nuclear
 
+        merge_bam.out
+            | total_bam_stats
+
         is_paired_dict = trimmed_reads
             | map(it -> tuple(it[0], it[3]))
             | distinct()
@@ -364,7 +368,7 @@ workflow alignReads {
         filtered_bam_files
             | join(is_paired_dict)
             | (insert_size & macs2)
-
+    
         filtered_bam_files
             | convert_to_cram
     emit:

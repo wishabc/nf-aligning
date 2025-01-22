@@ -62,6 +62,26 @@ process collect_basic_stats {
     """
 }
 
+process total_bam_stats {
+    conda params.conda
+    tag "${ag_id}"
+    publishDir "${params.outdir}"
+
+     input:
+        tuple val(ag_id), path(bam_file), path(bam_index)
+
+    output:
+        tuple val(ag_id), path(name)
+    
+    script:
+    name = "${ag_id}.total_sequencing_stats.txt"
+    """
+    python3 $moduleDir/bin/bamcounts.py \
+        ${bam_file} \
+        ${name}
+    """
+}
+
 process run_preseq {
     conda "/home/sabramov/miniconda3/envs/super-index"
     tag "${ag_id}:${read_type}"
