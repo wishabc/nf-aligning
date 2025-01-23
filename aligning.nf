@@ -357,7 +357,7 @@ workflow alignReads {
             | mark_duplicates 
             | filter_nuclear
 
-        merge_bam.out
+        mark_duplicates.out
             | total_bam_stats
 
         is_paired_dict = trimmed_reads
