@@ -358,6 +358,7 @@ workflow alignReads {
             | filter_nuclear
 
         mark_duplicates.out
+            | map(it -> tuple(it[0], it[1], it[2]))
             | total_bam_stats
 
         is_paired_dict = trimmed_reads
