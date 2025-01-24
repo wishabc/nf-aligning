@@ -1,6 +1,6 @@
 process percent_dup {
     scratch true
-    conda params.conda
+    container "${params.container}"
     tag "${ag_id}"
     cpus 2
     publishDir "${params.outdir}/${ag_id}"
