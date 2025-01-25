@@ -113,14 +113,7 @@ workflow {
             file(row.cram_index),
             )
         )
-        | collect_basic_stats
-        | map(it -> it[1])
-        | collectFile(
-            storeDir: params.outdir,
-            name: "basic_stats.tsv",
-            keepHeader: true,
-            skip: 1
-        )
+        | (collect_basic_stats & percent_dup)
 }
 
 workflow preseq {
