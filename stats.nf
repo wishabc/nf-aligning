@@ -43,7 +43,7 @@ process percent_dup {
 }
 
 process collect_basic_stats {
-    conda params.conda
+    container "${params.container}"
     tag "${ag_id}"
     publishDir "${params.outdir}/${ag_id}"
 
