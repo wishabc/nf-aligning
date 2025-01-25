@@ -181,10 +181,8 @@ workflow {
                 row.ag_id,
                 row.cram_file,
                 row.cram_index ?: "${row.cram_file}.crai",
-                file("${params.outdir}/${row.ag_id}/${row.ag_id}.total_cutcounts")
             )
         )
-        | filter { !it[3].exists() } // TMP hotfix to delete tmp files
         | map(it -> tuple(it[0], it[1], it[2]))
         | callHotspots
 }
