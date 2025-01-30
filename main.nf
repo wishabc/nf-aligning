@@ -72,10 +72,6 @@ workflow alignFromSRA {
     downloadFiles() | trimReads | alignTrimmed
 }
 
-workflow alignOnly {
-    trimReadsFromFile() | alignReads
-}
-
 workflow {
     trimReadsFromFile() | alignTrimmed
 }
