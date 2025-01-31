@@ -65,7 +65,7 @@ workflow alignTrimmed {
     main:
         out = data | alignReads | call_hotspots
     emit:
-        out
+        out.peaks
 }
 
 workflow alignFromSRA {
