@@ -63,7 +63,7 @@ process collect_basic_stats {
 }
 
 process total_bam_stats {
-    conda params.conda
+    container "${params.container}"
     tag "${ag_id}"
     publishDir "${params.outdir}/${ag_id}"
 
