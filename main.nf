@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 include { alignReads; get_container; set_key_for_group_tuple } from "./aligning"
-include { callHotspots } from "./hotspots_calling"
+include { call_hotspots } from "./hotspots_calling"
 include { trimReadsFromFile; trimReads } from "./trimming"
 
 
@@ -63,7 +63,7 @@ workflow alignTrimmed {
     take:
         data
     main:
-        out = alignReads(data) // | callHotspots
+        out = data | alignReads | call_hotspots
     emit:
         out
 }
