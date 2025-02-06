@@ -83,17 +83,6 @@ workflow preprocessBams {
 }
 
 
-workflow {
-    bams = Channel.fromPath(params.samples_file)
-			| splitCsv(header:true, sep:'\t')
-			| map(row -> tuple(
-                row.ag_id, 
-                file(row.cram_file), 
-                file("${row.cram_file}.crai")))
-            | preprocessBams
-            | spot_score
-}
-
 
 
 process subsample_with_pairs {

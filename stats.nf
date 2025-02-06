@@ -1,3 +1,7 @@
+include { preprocessBams } from "./subsampling"
+include { spot_score } from "./hotspots_calling.hotspot2"
+
+
 process percent_dup {
     scratch true
     container "${params.container}"
@@ -127,4 +131,15 @@ workflow preseq {
             )
         )
         | run_preseq
+}
+
+workflow spot1score {
+    bams = Channel.fromPath(params.samples_file)
+			| splitCsv(header:true, sep:'\t')
+			| map(row -> tuple(
+                row.ag_id, 
+                file(row.cram_file), 
+                file("${row.cram_file}.crai")))
+            | preprocessBams
+            | spot_score
 }
