@@ -83,8 +83,6 @@ workflow preprocessBams {
 }
 
 
-
-
 process subsample_with_pairs {
     conda params.conda
     tag "${ag_id}"
@@ -140,6 +138,18 @@ process subsample_with_pairs_frac {
     samtools index ${name}
     """
 }
+
+workflow spot1score {
+    bams = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.ag_id, 
+            file(row.cram_file), 
+            file("${row.cram_file}.crai")))
+        | preprocessBams
+        | spot_score
+}
+
 
 workflow subsampleTest {
     Channel.fromPath(params.samples_file)
