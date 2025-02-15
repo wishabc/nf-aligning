@@ -1,22 +1,9 @@
 #!/usr/bin/env nextflow
 include { total_bam_stats } from "./stats"
+include { get_container; set_key_for_group_tuple; fastaContainer } from "./helpers"
 nextflow.enable.dsl = 2
 
-// Workaround, so when we groupTuple later, 
-// New key contains info on how many objects are in the group
-def set_key_for_group_tuple(ch) {
-  ch.groupTuple()
-  .map{ it -> tuple(groupKey(it[0], it[1].size()), *it[1..(it.size()-1)]) }
-  .transpose()
-}
 
-def get_container(file_name) {
-  parent = file(file_name).parent
-  old_parent = file(file_name).toRealPath().parent
-  container = "--bind ${parent},${old_parent}"
-}
-
-fastaContainer = get_container(params.genome_fasta_file)
 nuclearChromsContainer = get_container(params.nuclear_chroms)
 chromSizesContainer = get_container(params.chrom_sizes)
 genome_fasta_file = file(params.genome_fasta_file)

@@ -1,7 +1,10 @@
+include { fastaContainer } from "./helpers"
+
 
 process percent_dup {
     scratch true
     container "${params.container}"
+    containerOptions "${fastaContainer}"
     tag "${ag_id}"
     cpus 2
     publishDir "${params.outdir}/${ag_id}"
