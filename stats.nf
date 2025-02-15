@@ -16,8 +16,12 @@ process percent_dup {
     name = "${ag_id}.spotdups.txt"
     perc_dup = "${ag_id}.percent_dup.txt"
     """
-    samtools sort -@${task.cpus} ${bam_file} > sorted.bam
+    samtools sort \
+        --reference ${params.genome_fasta_file} \
+        -@${task.cpus} \
+        ${bam_file} > sorted.bam
     samtools index sorted.bam
+
     picard RevertSam \
         INPUT=sorted.bam \
         OUTPUT=clear.bam \
