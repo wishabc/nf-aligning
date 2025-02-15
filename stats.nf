@@ -70,7 +70,7 @@ process collect_basic_stats {
     """
     echo -e "ag_id\tname\tvalue" > ${name}
     echo -e "${ag_id}\tfiltered_aligned\t\$(samtools view --reference ${params.genome_fasta_file} -c ${cram_file})" >> ${name}
-    echo -e "${ag_id}\tduplicates\t\$(samtools view -f 1024 --reference ${params.genome_fasta_file}q -c ${cram_file})" >> ${name}
+    echo -e "${ag_id}\tduplicates\t\$(samtools view -f 1024 --reference ${params.genome_fasta_file} -c ${cram_file})" >> ${name}
     """
 }
 
