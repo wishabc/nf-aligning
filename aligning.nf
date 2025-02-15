@@ -1,12 +1,15 @@
 #!/usr/bin/env nextflow
 include { total_bam_stats } from "./stats"
-include { get_container; set_key_for_group_tuple; fastaContainer } from "./helpers"
+include { get_container; set_key_for_group_tuple } from "./helpers"
 nextflow.enable.dsl = 2
 
 
 nuclearChromsContainer = get_container(params.nuclear_chroms)
 chromSizesContainer = get_container(params.chrom_sizes)
+fastaContainer = get_container(params.genome_fasta_file)
+
 genome_fasta_file = file(params.genome_fasta_file)
+
 
 
 process align_reads_single {

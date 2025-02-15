@@ -1,5 +1,6 @@
-include { fastaContainer } from "./helpers"
+include { get_container } from "./helpers"
 
+fastaContainer = get_container(params.genome_fasta_file)
 
 process percent_dup {
     scratch true

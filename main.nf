@@ -1,7 +1,8 @@
 #!/usr/bin/env nextflow
-include { alignReads; get_container; set_key_for_group_tuple } from "./aligning"
+include { alignReads } from "./aligning"
 include { call_hotspots } from "./hotspots_calling"
 include { trimReadsFromFile; trimReads } from "./trimming"
+include { get_container; set_key_for_group_tuple } from "./helpers"
 
 
 process symlink_or_download {
