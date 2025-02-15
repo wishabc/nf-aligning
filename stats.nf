@@ -55,6 +55,7 @@ process percent_dup {
 
 process collect_basic_stats {
     container "${params.container}"
+    containerOptions "${fastaContainer}"
     tag "${ag_id}"
     publishDir "${params.outdir}/${ag_id}"
 
@@ -68,8 +69,8 @@ process collect_basic_stats {
     name = "${ag_id}.sequencing_stats.txt"
     """
     echo -e "ag_id\tname\tvalue" > ${name}
-    echo -e "${ag_id}\tfiltered_aligned\t\$(samtools view -c ${cram_file})" >> ${name}
-    echo -e "${ag_id}\tduplicates\t\$(samtools view -f 1024 -c ${cram_file})" >> ${name}
+    echo -e "${ag_id}\tfiltered_aligned\t\$(samtools view --reference ${params.genome_fasta_file} -c ${cram_file})" >> ${name}
+    echo -e "${ag_id}\tduplicates\t\$(samtools view -f 1024 --reference ${params.genome_fasta_file}q -c ${cram_file})" >> ${name}
     """
 }
 
