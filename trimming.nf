@@ -2,13 +2,6 @@
 nextflow.enable.dsl = 2
 include { set_key_for_group_tuple } from "./aligning"
 
-def remove_ambiguous_bases(adapter) {
-    def x = adapter ? adapter.takeWhile { it in ['A', 'C', 'T', 'G'] } : ""
-    if (x && (x != adapter)) {
-        println("WARN: Adapter '${adapter}' contains ambiguous bases, using '${x}' instead")
-    }
-    return x
-}
 
 process fastp_adapter_trim {
     cpus params.threads
@@ -65,29 +58,4 @@ workflow trimReads {
         trimmed = fastp_adapter_trim(data).fastq
     emit:
         trimmed
-}
-
-workflow trimReadsFromFile {
-    main:
-        Channel.fromPath(params.samples_file)
-            | splitCsv(header:true, sep:'\t')
-            | map(
-                row -> tuple(
-                    row.sample_id,
-                    row.align_id,
-                    row.reads1,
-                    row.type == 'paired' ? row.reads2 : file('./'),
-                    remove_ambiguous_bases(row?.adapterP7),
-                    row.type == 'paired' ? remove_ambiguous_bases(row?.adapterP5) : "",
-                    row.type == 'paired'
-                )
-            )
-            | set_key_for_group_tuple
-            | trimReads
-    emit:
-        trimReads.out
-}
-
-workflow {
-    trimReadsFromFile()
 }

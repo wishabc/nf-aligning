@@ -1,8 +1,17 @@
 #!/usr/bin/env nextflow
 include { alignReads } from "./aligning"
 include { call_hotspots } from "./hotspots_calling"
-include { trimReadsFromFile; trimReads } from "./trimming"
+include { trimReads } from "./trimming"
 include { get_container; set_key_for_group_tuple } from "./helpers"
+
+
+def remove_ambiguous_bases(adapter) {
+    def x = adapter ? adapter.takeWhile { it in ['A', 'C', 'T', 'G'] } : ""
+    if (x && (x != adapter)) {
+        println("WARN: Adapter '${adapter}' contains ambiguous bases, using '${x}' instead")
+    }
+    return x
+}
 
 
 process symlink_or_download {
@@ -43,36 +52,43 @@ process symlink_or_download {
 
 }
 
-workflow downloadFiles {
-    main:
-        ids_channel = set_key_for_group_tuple(Channel.fromPath(params.samples_file)
-            .splitCsv(header:true, sep:'\t')
-            .map(row -> tuple(row.sample_id, row.align_id))).unique { it[1] }
-        reads = symlink_or_download(ids_channel).fastq
-        // Check if is_paired and convert to trimming pipeline format
-        output = reads.filter { file(it[2]).size() + file(it[3]).size() + file(it[4]).size() != 0 }
-        .map( 
-            it -> (file(it[2]).size() == 0) ?
-              tuple(it[0], it[1], it[4], "${projectDir}", "", "", false) :
-              tuple(it[0], it[1], it[2], it[3], "", "", true)
-        )
-    emit:
-        output
-}
-
-workflow alignTrimmed {
-    take:
-        data
-    main:
-        out = data | alignReads | call_hotspots
-    emit:
-        out.peaks
-}
 
 workflow alignFromSRA {
-    downloadFiles() | trimReads | alignTrimmed
+    ids_channel = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.sample_id, row.align_id))
+        | set_key_for_group_tuple
+        | unique { it[1] }
+
+    output = symlink_or_download(ids_channel).fastq
+        | filter { file(it[2]).size() + file(it[3]).size() + file(it[4]).size() != 0 }
+        | map( 
+            it -> (file(it[2]).size() == 0) ?
+                tuple(it[0], it[1], it[4], "${projectDir}", "", "", false) :
+                    tuple(it[0], it[1], it[2], it[3], "", "", true)
+            ) // Check if is_paired and convert to trimming pipeline format | trimReads | alignTrimmed
+        | trimReads
+        | alignReads 
+        | call_hotspots
 }
 
+
 workflow {
-    trimReadsFromFile() | alignTrimmed
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(
+            row -> tuple(
+                row.sample_id,
+                row.align_id,
+                row.reads1,
+                row.type == 'paired' ? row.reads2 : file('./'),
+                remove_ambiguous_bases(row?.adapterP7),
+                row.type == 'paired' ? remove_ambiguous_bases(row?.adapterP5) : "",
+                row.type == 'paired'
+            )
+        )
+        | set_key_for_group_tuple
+        | trimReads
+        | alignReads 
+        //| call_hotspots
 }
