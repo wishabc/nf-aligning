@@ -66,7 +66,7 @@ workflow alignFromSRA {
             it -> (file(it[2]).size() == 0) ?
                 tuple(it[0], it[1], it[4], "${projectDir}", "", "", false) :
                     tuple(it[0], it[1], it[2], it[3], "", "", true)
-            ) // Check if is_paired and convert to trimming pipeline format | trimReads | alignTrimmed
+            ) // Check if is_paired and convert to trimming pipeline format
         | trimReads
         | alignReads 
         | call_hotspots
