@@ -15,8 +15,8 @@ def remove_ambiguous_bases(adapter) {
 
 
 process symlink_or_download {
-    publishDir "${params.outdir}/${sample_id}/stats", pattern: "${metadata}"
-    publishDir "${params.outdir}/${sample_id}", pattern: "${srr}/*.fastq.gz"
+    publishDir "${params.outdir}/${ag_id}/stats", pattern: "${metadata}"
+    publishDir "${params.outdir}/${ag_id}", pattern: "${srr}/*.fastq.gz"
     cpus params.threads
     tag "${srr}"
     maxForks 4
@@ -26,9 +26,9 @@ process symlink_or_download {
     containerOptions "--network=host"
 
     input:
-        tuple val(sample_id), val(srr)
+        tuple val(ag_id), val(srr)
     output:
-        tuple val(sample_id), val(srr), path("${srr}/${srr}_1.fastq.gz"), path("${srr}/${srr}_2.fastq.gz"), path("${srr}/${srr}.fastq.gz"), emit: fastq
+        tuple val(ag_id), val(srr), path("${srr}/${srr}_1.fastq.gz"), path("${srr}/${srr}_2.fastq.gz"), path("${srr}/${srr}.fastq.gz"), emit: fastq
         tuple val(srr), path(metadata), emit: meta
 
     script:
@@ -56,7 +56,7 @@ process symlink_or_download {
 workflow alignFromSRA {
     ids_channel = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.sample_id, row.align_id))
+        | map(row -> tuple(row.ag_id, row.align_id))
         | set_key_for_group_tuple
         | unique { it[1] }
 
