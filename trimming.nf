@@ -8,15 +8,15 @@ process fastp_adapter_trim {
     scratch true
     container "${params.container}"
     tag "${align_id}"
-    publishDir "${params.outdir}/${sample_id}/stats/${align_id}", pattern: "fastp*"
+    publishDir "${params.outdir}/${ag_id}/stats/${align_id}", pattern: "fastp*"
 
     input:
-        tuple val(sample_id), val(align_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
+        tuple val(ag_id), val(align_id), path(r1), path(r2), val(adapterP7), val(adapterP5), val(is_paired)
 
     output:
-        tuple val(sample_id), path(name1), path(name2), val(is_paired), emit: fastq
-        tuple val(sample_id), path('fastp.json'), emit: json
-        tuple val(sample_id), path('fastp.html'), emit: html
+        tuple val(ag_id), path(name1), path(name2), val(is_paired), emit: fastq
+        tuple val(ag_id), path('fastp.json'), emit: json
+        tuple val(ag_id), path('fastp.html'), emit: html
 
     script:
     name1 = "${align_id}.1.trimmed.fastq.gz"
@@ -52,7 +52,7 @@ process fastp_adapter_trim {
 }
 
 workflow trimReads {
-    take: // [sample_id, align_id, r1, r2, adapter7, adapter5, is_paired]
+    take: // [ag_id, align_id, r1, r2, adapter7, adapter5, is_paired]
         data
     main:
         trimmed = fastp_adapter_trim(data).fastq

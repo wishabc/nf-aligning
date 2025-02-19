@@ -148,22 +148,22 @@ process merge_bam {
  * Step 4: Mark duplicates with Picard
  */
 process mark_duplicates {
-  tag "${sample_id}"
+  tag "${ag_id}"
   scratch true
   label "high_mem"
 
-  publishDir "${params.outdir}/${sample_id}/stats", pattern: "${metric_name}"
+  publishDir "${params.outdir}/${ag_id}/stats", pattern: "${metric_name}"
   container "${params.container}"
 
   input:
-    tuple val(sample_id), path(merged_bam), path(merged_bam_index)
+    tuple val(ag_id), path(merged_bam), path(merged_bam_index)
 
   output:
-    tuple val(sample_id), path(name), path("${name}.bai"), path(metric_name)
+    tuple val(ag_id), path(name), path("${name}.bai"), path(metric_name)
   
   script:
-  name = "${sample_id}.marked.bam"
-  metric_name = "${sample_id}.MarkDuplicates.picard"
+  name = "${ag_id}.marked.bam"
+  metric_name = "${ag_id}.MarkDuplicates.picard"
     """
     picard RevertOriginalBaseQualitiesAndAddMateCigar \
         INPUT="${merged_bam}" OUTPUT=cigar.bam \
@@ -187,17 +187,17 @@ Step 5: Filter down to nuclear reads passing filter
 process filter_nuclear {
     container "${params.container}"
     containerOptions nuclearChromsContainer
-    tag "${sample_id}"
+    tag "${ag_id}"
     scratch true
 
     input:
-        tuple val(sample_id), path(bam), path(bam_index), path(picard_dup_file) 
+        tuple val(ag_id), path(bam), path(bam_index), path(picard_dup_file) 
 
     output:
-        tuple val(sample_id), path("${name}"), path("${name}.bai")
+        tuple val(ag_id), path("${name}"), path("${name}.bai")
 
     script:
-    name = "${sample_id}.filtered.bam"
+    name = "${ag_id}.filtered.bam"
     """
     samtools view -b -F 516 ${bam} > filtered.bam # mapped and passing QC
     samtools index filtered.bam
@@ -217,22 +217,22 @@ process filter_nuclear {
 
 // Works only with paired end data
 process insert_size {
-  tag "${sample_id}"
+  tag "${ag_id}"
   scratch true
   container "${params.container}"
-  publishDir "${params.outdir}/${sample_id}/stats"
+  publishDir "${params.outdir}/${ag_id}/stats"
 
   input:
-    tuple val(sample_id), path(bam), path(bai), val(is_paired)
+    tuple val(ag_id), path(bam), path(bai), val(is_paired)
 
   output:
-    tuple val(sample_id), path(stats_name), path(pdf_name)
+    tuple val(ag_id), path(stats_name), path(pdf_name)
 
   when:
     is_paired
 
   script:
-  stats_name = "${sample_id}.CollectInsertSizeMetrics.picard"
+  stats_name = "${ag_id}.CollectInsertSizeMetrics.picard"
   pdf_name = "${stats_name}.pdf"
   """
   samtools idxstats "${bam}" \
@@ -254,8 +254,8 @@ process insert_size {
 
 
 process macs2 {
-  tag "${sample_id}"
-  publishDir "${params.outdir}/${sample_id}/stats"
+  tag "${ag_id}"
+  publishDir "${params.outdir}/${ag_id}/stats"
   container "${params.container}"
   containerOptions "${chromSizesContainer}"
   scratch true
@@ -264,10 +264,10 @@ process macs2 {
     params.do_macs
 
   input:
-    tuple val(sample_id), path(bam), path(bai), val(is_paired)
+    tuple val(ag_id), path(bam), path(bai), val(is_paired)
 
   output:
-    tuple val(sample_id), path("macs2.${sample_id}*")
+    tuple val(ag_id), path("macs2.${ag_id}*")
 
   script:
   mode = 'BAM'
@@ -276,11 +276,11 @@ process macs2 {
   macs2 callpeak \
     -t "${bam}" \
     -f ${mode} \
-    -n macs2.${sample_id}\
+    -n macs2.${ag_id}\
     -g \$gen_size -p 0.01 \
     --shift 75 --extsize 150 \
     --nomodel -B --SPMR \
-    --keep-dup all --call-summits > "macs2.${sample_id}.err"
+    --keep-dup all --call-summits > "macs2.${ag_id}.err"
   """
 }
 
@@ -289,17 +289,17 @@ process macs2 {
 Step 6: Convert Filtered Bam to cram file
 **/
 process convert_to_cram {
-  tag "${sample_id}"
-  publishDir "${params.outdir}/${sample_id}"
+  tag "${ag_id}"
+  publishDir "${params.outdir}/${ag_id}"
   cpus params.threads
   container "${params.container}"
   containerOptions fastaContainer
 
   input:
-    tuple val(sample_id), path(bam), path(bam_index)
+    tuple val(ag_id), path(bam), path(bam_index)
 
   output:
-    tuple val(sample_id), path(cramfile), path("${cramfile}.crai")
+    tuple val(ag_id), path(cramfile), path("${cramfile}.crai")
 
   script:
   cramfile = bam.baseName + ".cram"
@@ -368,7 +368,7 @@ workflow alignReads {
 workflow {
     fastq_trimmed_paired = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-	    | map(row -> tuple(row.sample_id, row.reads1, row.reads2, row.type == 'paired'))
+	    | map(row -> tuple(row.ag_id, row.reads1, row.reads2, row.type == 'paired'))
         | set_key_for_group_tuple
         | alignReads
 }

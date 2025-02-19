@@ -78,7 +78,7 @@ workflow {
         | splitCsv(header:true, sep:'\t')
         | map(
             row -> tuple(
-                row.sample_id,
+                row.ag_id,
                 row.align_id,
                 row.reads1,
                 row.type == 'paired' ? row.reads2 : file('./'),
