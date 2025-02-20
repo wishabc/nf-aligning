@@ -57,8 +57,9 @@ workflow alignFromSRA {
     ids_channel = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(row.ag_id, row.align_id))
-        | set_key_for_group_tuple
         | unique { it[1] }
+        | set_key_for_group_tuple
+
 
     output = symlink_or_download(ids_channel).fastq
         | filter { file(it[2]).size() + file(it[3]).size() + file(it[4]).size() != 0 }
@@ -81,12 +82,13 @@ workflow {
                 row.ag_id,
                 row.align_id,
                 row.reads1,
-                row.type == 'paired' ? row.reads2 : file('./'),
+                row.type == 'paired' ? row.reads2 : "${row.reads1}.mock",
                 remove_ambiguous_bases(row?.adapterP7),
                 row.type == 'paired' ? remove_ambiguous_bases(row?.adapterP5) : "",
                 row.type == 'paired'
             )
         )
+        | unique { it[1] }
         | set_key_for_group_tuple
         | trimReads
         | alignReads 

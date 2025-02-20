@@ -20,6 +20,7 @@ process fastp_adapter_trim {
 
     script:
     name1 = "${align_id}.1.trimmed.fastq.gz"
+    name2 = "${align_id}.2.trimmed.fastq.gz"
     if (adapterP7 == "") {
         command = is_paired ? "--detect_adapter_for_pe" : ""
     } else {
@@ -27,7 +28,6 @@ process fastp_adapter_trim {
     }
     
     if (is_paired) {
-        name2 = "${align_id}.2.trimmed.fastq.gz"
         """
         fastp --in1 "${r1}" \
             --in2 "${r2}" \
@@ -39,7 +39,6 @@ process fastp_adapter_trim {
             --thread ${task.cpus}
         """
     } else {
-        name2 = './'
         """
         fastp -i "${r1}" \
             ${command} \
@@ -47,6 +46,8 @@ process fastp_adapter_trim {
             --disable_quality_filtering \
             --disable_length_filtering \
             --thread ${task.cpus}
+        
+        touch ${name2}
         """
     }
 }
