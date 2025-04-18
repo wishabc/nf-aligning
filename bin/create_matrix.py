@@ -20,8 +20,10 @@ def main(samples_order, filelist_map):
             raise
     
     data = np.vstack(data)
+    total_els = data.shape[0] * data.shape[1]
+    print(total_els, (data > 0).sum() / total_els)
     data = sp.coo_matrix(data).tocsr()
-    sparsity = 1.0 - data.nnz / (data.shape[0] * data.shape[1])
+    sparsity = 1.0 - data.nnz / (total_els)
     print(f"Sparsity: {sparsity:.2%}")
     return data
 
