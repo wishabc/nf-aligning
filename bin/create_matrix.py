@@ -9,7 +9,11 @@ def main(samples_order, filelist_map):
     print("Reading files...")
     for sample_id in tqdm(samples_order):
         file = filelist_map[sample_id]
-        data.append(np.load(file))
+        try:
+            data.append(np.load(file))
+        except:
+            print("Problems with", sample_id)
+            raise
     
     data = np.vstack(data)
     data = sp.coo_matrix(data).tocsr()
