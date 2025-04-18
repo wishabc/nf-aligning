@@ -255,7 +255,7 @@ process create_matrix {
         path name
     
     script:
-    name = "neglog10_pvals.npz"
+    name = "neglog10_pvals.npy"
     """
     echo "${pvals.join('\n')}" > filelist.txt
     python ${moduleDir}/bin/create_matrix.py \

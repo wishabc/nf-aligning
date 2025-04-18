@@ -21,9 +21,9 @@ def main(samples_order, filelist_map):
     
     total_els = data.shape[0] * data.shape[1]
     print(total_els, (data > 0).sum() / total_els)
-    data = sp.coo_matrix(data).tocsr()
-    sparsity = 1.0 - data.nnz / (total_els)
-    print(f"Sparsity: {sparsity:.2%}")
+    # data = sp.coo_matrix(data).tocsr()
+    # sparsity = 1.0 - data.nnz / (total_els)
+    # print(f"Sparsity: {sparsity:.2%}")
     return data
 
 
@@ -32,4 +32,4 @@ if __name__ == '__main__':
     filelist = np.loadtxt(sys.argv[2], dtype=str)
     ids_map = {x.replace('.max_pvals.npy', ''): x for x in filelist}
     sparse_res = main(samples_order, ids_map)
-    sp.save_npz(sys.argv[3], sparse_res)
+    np.save(sys.argv[3], sparse_res)
