@@ -277,6 +277,6 @@ workflow extractMaxPvalue {
         )
         | extract_pval
         | map(it -> it[1])
-        | collect()
+        | collect(sort: true, flat: true)
         | create_matrix
 }
