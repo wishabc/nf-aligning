@@ -233,6 +233,7 @@ process extract_pval {
     script:
     name = "${id}.max_pvals.npy"
     """
+    echo 1
     hotspot3-pvals \
         ${pvals_parquet} \
         ${bed_file} \
