@@ -2,10 +2,12 @@ import pandas as pd
 import sys
 import numpy as np
 import scipy.sparse as sp
+from tqdm import tqdm
 
 def main(samples_order, filelist_map):
     data = []
-    for sample_id in samples_order:
+    print("Reading files...")
+    for sample_id in tqdm(samples_order):
         file = filelist_map[sample_id]
         df = pd.read_table(file, names=['chrom', 'start', 'end', 'neglog10_pval'], header=None)
         data.append(df['neglog10_pval'].values.astype(np.float32))

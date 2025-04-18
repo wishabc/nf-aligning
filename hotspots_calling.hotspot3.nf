@@ -257,9 +257,9 @@ process create_matrix {
     """
     echo "${bed_files.join('\n')}" > filelist.txt
     python ${moduleDir}/bin/create_matrix.py \
+        ${params.samples_file} \
         filelist.txt \
         ${name} \
-        ${params.samples_file}
     """
     
 }
