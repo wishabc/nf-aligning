@@ -217,3 +217,38 @@ workflow fromCutcounts {
         )
         | call_hotspots_from_cutcounts
 }
+
+process extract_pval {
+    tag "${id}"
+    publishDir "${params.outdir}/${id}"
+    conda "/home/sabramov/miniconda3/envs/jupyterlab"
+
+    input:
+        tuple val(id), path(pvals_parquet)
+
+    output:
+        tuple val(id), path(name)
+
+    script:
+    name = "${id}.max_pvals.bed"
+    """
+    hotspot3-pvals \
+        ${pvals_parquet} \
+        ${params.bed_file} \
+        ${name} \
+        --chrom_sizes ${params.nuclear_chrom_sizes}
+    """
+}
+workflow extractMaxPvalue {
+    prev_run_dir = "/net/seq/data2/projects/sabramov/SuperIndex/hotspot3/peak_calls.v23/"
+    params.bed_file = ""
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+                row.ag_id,
+                file("${prev_run_dir}/${row.ag_id}/${row.ag_id}.pvals.parquet"),
+                file(params.bed_file)
+            )
+        )
+        | call_hotspots_from_cutcounts
+}
