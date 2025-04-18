@@ -220,7 +220,7 @@ workflow fromCutcounts {
 
 process extract_pval {
     tag "${id}"
-    publishDir "${params.outdir}/${id}"
+    //publishDir "${params.outdir}/${id}"
     conda "/home/sabramov/miniconda3/envs/jupyterlab"
     label "high_mem"
 
@@ -240,6 +240,30 @@ process extract_pval {
         --chrom_sizes ${params.nuclear_chrom_sizes}
     """
 }
+
+process create_matrix {
+    publishDir params.outdir
+    conda "/home/sabramov/miniconda3/envs/jupyterlab"
+    label "high_mem"
+
+    input:
+        path bed_files
+    
+    output:
+        path name
+    
+    script:
+    name = "neglog10_pvals.npz"
+    """
+    echo "${bed_files.join('\n')}" > filelist.txt
+    python ${moduleDir}/bin/create_matrix.py \
+        filelist.txt \
+        ${name} \
+        ${params.samples_file}
+    """
+    
+}
+
 workflow extractMaxPvalue {
     prev_run_dir = "/net/seq/data2/projects/sabramov/SuperIndex/hotspot3/peak_calls.v23/"
     params.bed_file = ""
