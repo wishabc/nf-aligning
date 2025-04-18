@@ -231,13 +231,14 @@ process extract_pval {
         tuple val(id), path(name)
 
     script:
-    name = "${id}.max_pvals.bed"
+    name = "${id}.max_pvals.npy"
     """
     hotspot3-pvals \
         ${pvals_parquet} \
         ${bed_file} \
         ${name} \
-        --chrom_sizes ${params.nuclear_chrom_sizes}
+        --chrom_sizes ${params.nuclear_chrom_sizes} \
+        --format npy
     """
 }
 
@@ -247,7 +248,7 @@ process create_matrix {
     label "high_mem"
 
     input:
-        path bed_files
+        path pvals
     
     output:
         path name
@@ -255,7 +256,7 @@ process create_matrix {
     script:
     name = "neglog10_pvals.npz"
     """
-    echo "${bed_files.join('\n')}" > filelist.txt
+    echo "${pvals.join('\n')}" > filelist.txt
     python ${moduleDir}/bin/create_matrix.py \
         ${params.samples_file} \
         filelist.txt \

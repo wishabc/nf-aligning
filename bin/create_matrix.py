@@ -9,8 +9,7 @@ def main(samples_order, filelist_map):
     print("Reading files...")
     for sample_id in tqdm(samples_order):
         file = filelist_map[sample_id]
-        df = pd.read_table(file, names=['chrom', 'start', 'end', 'neglog10_pval'], header=None)
-        data.append(df['neglog10_pval'].values.astype(np.float32))
+        data.append(np.load(file))
     
     data = np.vstack(data)
     data = sp.coo_matrix(data).tocsr()
