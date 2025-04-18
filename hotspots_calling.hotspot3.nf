@@ -245,7 +245,7 @@ process extract_pval {
 
 process create_matrix {
     publishDir params.outdir
-    label "big_mem"
+    label 'big_mem'
     conda "/home/sabramov/miniconda3/envs/jupyterlab"
 
     input:
