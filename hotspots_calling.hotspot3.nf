@@ -224,7 +224,7 @@ process extract_pval {
     conda "/home/sabramov/miniconda3/envs/jupyterlab"
 
     input:
-        tuple val(id), path(pvals_parquet)
+        tuple val(id), path(pvals_parquet), path(bed_file)
 
     output:
         tuple val(id), path(name)
@@ -234,7 +234,7 @@ process extract_pval {
     """
     hotspot3-pvals \
         ${pvals_parquet} \
-        ${params.bed_file} \
+        ${bed_file} \
         ${name} \
         --chrom_sizes ${params.nuclear_chrom_sizes}
     """
