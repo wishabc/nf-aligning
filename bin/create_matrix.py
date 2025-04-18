@@ -4,13 +4,17 @@ import numpy as np
 import scipy.sparse as sp
 from tqdm import tqdm
 
+
 def main(samples_order, filelist_map):
     data = []
     print("Reading files...")
     for sample_id in tqdm(samples_order):
         file = filelist_map[sample_id]
         try:
-            data.append(np.load(file))
+            f = np.load(file)
+            if len(data) != 0:
+                assert f.shape == data[0].shape
+            data.append(f)
         except:
             print("Problems with", sample_id)
             raise
