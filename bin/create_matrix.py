@@ -9,7 +9,7 @@ def main(samples_order, filelist_map):
     data = []
     print("Reading files...")
     f = np.load(filelist_map[samples_order[0]])
-    data = np.zeros((len(samples_order), f.shape), dtype=np.float16)
+    data = np.zeros((len(samples_order), f.shape[0]), dtype=np.float16)
     for i, sample_id in enumerate(tqdm(samples_order)):
         file = filelist_map[sample_id]
         try:
