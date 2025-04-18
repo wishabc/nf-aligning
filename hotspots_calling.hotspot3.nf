@@ -250,5 +250,5 @@ workflow extractMaxPvalue {
                 file(params.bed_file)
             )
         )
-        | call_hotspots_from_cutcounts
+        | extract_pval
 }
