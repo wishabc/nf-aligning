@@ -222,6 +222,7 @@ process extract_pval {
     tag "${id}"
     publishDir "${params.outdir}/${id}"
     conda "/home/sabramov/miniconda3/envs/jupyterlab"
+    label "high_mem"
 
     input:
         tuple val(id), path(pvals_parquet), path(bed_file)
