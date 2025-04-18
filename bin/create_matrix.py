@@ -8,18 +8,17 @@ from tqdm import tqdm
 def main(samples_order, filelist_map):
     data = []
     print("Reading files...")
-    for sample_id in tqdm(samples_order):
+    f = np.load(filelist_map[samples_order[0]])
+    data = np.zeros((len(samples_order), f.shape), dtype=np.float16)
+    for i, sample_id in enumerate(tqdm(samples_order)):
         file = filelist_map[sample_id]
         try:
             f = np.load(file).astype(np.float16)
-            if len(data) != 0:
-                assert f.shape == data[0].shape
-            data.append(f)
+            data[i, :] = f
         except:
             print("Problems with", sample_id)
             raise
     
-    data = np.hstack(data)
     total_els = data.shape[0] * data.shape[1]
     print(total_els, (data > 0).sum() / total_els)
     data = sp.coo_matrix(data).tocsr()
