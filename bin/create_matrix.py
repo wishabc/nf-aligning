@@ -21,6 +21,6 @@ def main(samples_order, filelist_map):
 if __name__ == '__main__':
     samples_order = pd.read_table(sys.argv[1])['ag_id'].values
     filelist = np.loadtxt(sys.argv[2], dtype=str)
-    ids_map = {x.replace('.max_pvals.bed', ''): x for x in filelist}
+    ids_map = {x.replace('.max_pvals.npy', ''): x for x in filelist}
     sparse_res = main(samples_order, ids_map)
     sp.save_npz(sys.argv[3], sparse_res)
