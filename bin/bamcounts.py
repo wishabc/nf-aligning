@@ -26,6 +26,10 @@ def parser_setup():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("bamfile", help="The BAM file to make counts on.")
+    parser.add_argument("--reference", 
+        help="The reference fasta file used to align the BAM file.",
+        default=None
+    )
     parser.add_argument("outfile", help="The file to write the counts to.")
 
     parser.add_argument(
@@ -195,8 +199,8 @@ class BAMFilter(object):
         for count in sorted(counts.keys()):
             countout.write("%s\t%d\n" % (count, counts[count]))
 
-    def filter(self, infile, countfile):
-        inbam = Samfile(infile, "rb")
+    def filter(self, infile, countfile, reference=None):
+        inbam = Samfile(infile, "rb", reference_filename=reference)
 
         count_labels = [
             "u",
@@ -261,7 +265,7 @@ def main(args=sys.argv):
     filter = BAMFilter(
         max_mismatches=args.max_mismatches, min_mapping_quality=args.min_mapping_quality
     )
-    filter.filter(bamfile, countfile)
+    filter.filter(bamfile, countfile, args.reference)
 
 
 # This is the main body of the program that only runs when running this script

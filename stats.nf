@@ -76,6 +76,7 @@ process collect_basic_stats {
 
 process total_bam_stats {
     container "${params.container}"
+    containerOptions "${fastaContainer}"
     tag "${ag_id}"
     publishDir "${params.outdir}/${ag_id}"
 
@@ -90,7 +91,8 @@ process total_bam_stats {
     """
     python3 $moduleDir/bin/bamcounts.py \
         ${bam_file} \
-        ${name}
+        ${name} \
+        --reference ${params.genome_fasta_file}
     """
 }
 
