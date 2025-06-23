@@ -2,7 +2,7 @@ include { callHotspots; spot_score } from "./hotspots_calling"
 include { percent_dup } from "./stats"
 
 
-params.conda = "/home/sabramov/miniconda3/envs/babachi"
+params.conda = "/home/sabramov/miniconda3/envs/jupyterlab"
 
 
 process take_r1_from_pair {
