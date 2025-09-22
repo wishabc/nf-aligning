@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-include { set_key_for_group_tuple } from "./aligning"
+include { set_key_for_group_tuple } from "./helpers"
 
 
 process fastp_adapter_trim {

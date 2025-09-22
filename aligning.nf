@@ -1,5 +1,4 @@
 #!/usr/bin/env nextflow
-include { total_bam_stats } from "./stats"
 include { get_container; set_key_for_group_tuple } from "./helpers"
 nextflow.enable.dsl = 2
 
@@ -250,6 +249,28 @@ process insert_size {
     VALIDATION_STRINGENCY=LENIENT \
     ASSUME_SORTED=true
   """
+}
+
+process total_bam_stats {
+    container "${params.container}"
+    containerOptions "${fastaContainer}"
+    tag "${ag_id}"
+    publishDir "${params.outdir}/${ag_id}"
+
+     input:
+        tuple val(ag_id), path(bam_file), path(bam_index)
+
+    output:
+        tuple val(ag_id), path(name)
+    
+    script:
+    name = "${ag_id}.total_sequencing_stats.txt"
+    """
+    python3 $moduleDir/bin/bamcounts.py \
+        ${bam_file} \
+        ${name} \
+        --reference ${params.genome_fasta_file}
+    """
 }
 
 

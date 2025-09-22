@@ -1,4 +1,5 @@
 include { get_container } from "./helpers"
+include { filter_nuclear; total_bam_stats } from "./aligning"
 
 fastaContainer = get_container(params.genome_fasta_file)
 
@@ -74,27 +75,6 @@ process collect_basic_stats {
     """
 }
 
-process total_bam_stats {
-    container "${params.container}"
-    containerOptions "${fastaContainer}"
-    tag "${ag_id}"
-    publishDir "${params.outdir}/${ag_id}"
-
-     input:
-        tuple val(ag_id), path(bam_file), path(bam_index)
-
-    output:
-        tuple val(ag_id), path(name)
-    
-    script:
-    name = "${ag_id}.total_sequencing_stats.txt"
-    """
-    python3 $moduleDir/bin/bamcounts.py \
-        ${bam_file} \
-        ${name} \
-        --reference ${params.genome_fasta_file}
-    """
-}
 
 process run_preseq {
     conda "/home/sabramov/miniconda3/envs/super-index"
@@ -128,6 +108,19 @@ workflow {
             )
         )
         | (collect_basic_stats & percent_dup)
+}
+
+workflow nuclearStats {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.ag_id,
+            file(row.cram_file),
+            file(row.cram_index),
+            )
+        )
+    | filter_nuclear
+    | total_bam_stats
 }
 
 workflow preseq {

@@ -23,7 +23,6 @@ process symlink_or_download {
     scratch true
     errorStrategy 'ignore'
     container "${params.container}"
-    containerOptions "--network=host"
 
     input:
         tuple val(ag_id), val(srr)
