@@ -187,6 +187,7 @@ process filter_nuclear {
     container "${params.container}"
     containerOptions nuclearChromsContainer
     tag "${ag_id}"
+    cpus 3
     scratch true
 
     input:
@@ -198,18 +199,17 @@ process filter_nuclear {
     script:
     name = "${ag_id}.filtered.bam"
     """
-    samtools view -b -F 516 ${bam} > filtered.bam # mapped and passing QC
-    samtools index filtered.bam
-
     if [[ "${params.save_cram_mode}" == "nuclear" ]]; then
-        cat "${params.nuclear_chroms}" \
-            | xargs samtools view -b filtered.bam > ${name}
-
-        samtools index ${name}
+        samtools view -@ ${task.cpus} -b \
+            -F 516 \
+            ${bam} \
+            \$(cat "${params.nuclear_chroms}") \
+            -o ${name}
     else
-        mv filtered.bam ${name}
-        mv filtered.bam.bai ${name}.bai
+        samtools view -@ ${task.cpus} -b -F 516 ${bam} -o ${name}
     fi
+
+    samtools index -@ ${task.cpus} ${name}
     """
 }
 
