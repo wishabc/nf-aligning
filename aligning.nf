@@ -190,7 +190,7 @@ process filter_nuclear {
     scratch true
 
     input:
-        tuple val(ag_id), path(bam), path(bam_index), path(picard_dup_file) 
+        tuple val(ag_id), path(bam), path(bam_index)
 
     output:
         tuple val(ag_id), path("${name}"), path("${name}.bai")
@@ -360,27 +360,28 @@ workflow alignReads {
     take:
         trimmed_reads
     main:
-        filtered_bam_files = trimmed_reads
+        marked_bam_files = trimmed_reads
             | alignBwa
             | filter_and_sort
             | groupTuple()
             | merge_bam
-            | mark_duplicates 
-            | filter_nuclear
-
-        mark_duplicates.out
+            | mark_duplicates
             | map(it -> tuple(it[0], it[1], it[2]))
+        
+
+        marked_bam_files
             | total_bam_stats
 
         is_paired_dict = trimmed_reads
             | map(it -> tuple(it[0], it[3]))
             | distinct()
         
-        filtered_bam_files
+        marked_bam_files
+            | filter_nuclear
             | join(is_paired_dict)
             | (insert_size & macs2)
     
-        filtered_bam_files
+        filter_nuclear.out
             | convert_to_cram
     emit:
         convert_to_cram.out
