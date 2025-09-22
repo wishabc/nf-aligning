@@ -187,7 +187,7 @@ process filter_nuclear {
     container "${params.container}"
     containerOptions nuclearChromsContainer
     tag "${ag_id}"
-    cpus 3
+    cpus 2
 
     input:
         tuple val(ag_id), path(bam), path(bam_index)
@@ -199,12 +199,18 @@ process filter_nuclear {
     name = "${ag_id}.filtered.bam"
     """
     if [[ "${params.save_cram_mode}" == "nuclear" ]]; then
-        samtools view -@ ${task.cpus} -b \
+        samtools view \
+            -@${task.cpus} \
+            -b \
             -F 516 \
             ${bam} \
+            -T "${params.genome_fasta_file}" \
             \$(cat "${params.nuclear_chroms}") > ${name}
     else
-        samtools view -@ ${task.cpus} -b -F 516 ${bam} > ${name}
+        samtools view \
+            -@ ${task.cpus} \
+            -T "${params.genome_fasta_file}" \
+            -b -F 516 ${bam} > ${name}
     fi
 
     samtools index -@ ${task.cpus} ${name}
