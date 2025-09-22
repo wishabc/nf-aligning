@@ -188,6 +188,7 @@ process filter_nuclear {
     containerOptions nuclearChromsContainer
     tag "${ag_id}"
     cpus 3
+    scratch true
 
     input:
         tuple val(ag_id), path(bam), path(bam_index)
@@ -202,10 +203,9 @@ process filter_nuclear {
         samtools view -@ ${task.cpus} -b \
             -F 516 \
             ${bam} \
-            \$(cat "${params.nuclear_chroms}") \
-            -o ${name}
+            \$(cat "${params.nuclear_chroms}") > ${name}
     else
-        samtools view -@ ${task.cpus} -b -F 516 ${bam} -o ${name}
+        samtools view -@ ${task.cpus} -b -F 516 ${bam} > ${name}
     fi
 
     samtools index -@ ${task.cpus} ${name}
