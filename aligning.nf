@@ -188,7 +188,6 @@ process filter_nuclear {
     containerOptions nuclearChromsContainer
     tag "${ag_id}"
     cpus 3
-    scratch true
 
     input:
         tuple val(ag_id), path(bam), path(bam_index)
