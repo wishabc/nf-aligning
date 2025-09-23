@@ -120,7 +120,7 @@ workflow nuclearStats {
             )
         )
         | filter { 
-            ~(file("${params.outdir}/${it[0]}/${it[0]}.total_sequencing_stats.txt").exists())
+            !(file("${params.outdir}/${it[0]}/${it[0]}.total_sequencing_stats.txt").exists())
          }
         | filter_nuclear
         | total_bam_stats
