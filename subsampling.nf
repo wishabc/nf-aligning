@@ -1,4 +1,4 @@
-include { callHotspots; spot_score } from "./hotspots_calling"
+include { callHotspots } from "./hotspots_calling"
 include { mark_duplicates; filter_nuclear; total_bam_stats } from "./aligning"
 
 
