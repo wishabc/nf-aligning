@@ -52,42 +52,6 @@ process subsample {
     """
 }
 
-process mark_dups_subsample {
-    container "${params.container}"
-    containerOptions "${fastaContainer}"
-    tag "${ag_id}"
-    cpus 2
-    publishDir "${params.outdir}/${ag_id}"
-
-    input:
-        tuple val(ag_id), path(bam_file), path(bam_file_index)
-    
-    output:
-        tuple val(ag_id), path(name), path("${name}.bai")
-
-    script:
-    name = "${ag_id}.marked.bam"
-    """
-    picard RevertSam \
-        INPUT=${bam_file} \
-        OUTPUT=clear.bam \
-        RESTORE_HARDCLIPS=false \
-        VALIDATION_STRINGENCY=SILENT \
-        REMOVE_DUPLICATE_INFORMATION=true\
-        SORT_ORDER=coordinate \
-        RESTORE_ORIGINAL_QUALITIES=false \
-        REMOVE_ALIGNMENT_INFORMATION=false
-
-    picard MarkDuplicatesWithMateCigar \
-        INPUT=clear.bam \
-        METRICS_FILE=perc_dups.txt \
-        OUTPUT=${name} \
-        ASSUME_SORTED=true \
-        MINIMUM_DISTANCE=300 \
-        VALIDATION_STRINGENCY=SILENT \
-        READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
-    """
-}
 
 process spot_score {
 
@@ -197,6 +161,45 @@ process subsample_with_pairs_frac {
         --reference ${params.genome_fasta_file} \
         --subsample ${frac} \
         | samtools sort -@${task.cpus} > ${name}
+    samtools index ${name}
+    """
+}
+
+
+process mark_dups_subsample {
+    container "${params.container}"
+    containerOptions "${fastaContainer}"
+    tag "${ag_id}"
+    cpus 2
+    publishDir "${params.outdir}/${ag_id}"
+
+    input:
+        tuple val(ag_id), path(bam_file), path(bam_file_index)
+    
+    output:
+        tuple val(ag_id), path(name), path("${name}.bai")
+
+    script:
+    name = "${ag_id}.marked.bam"
+    """
+    picard RevertSam \
+        INPUT=${bam_file} \
+        OUTPUT=clear.bam \
+        RESTORE_HARDCLIPS=false \
+        VALIDATION_STRINGENCY=SILENT \
+        REMOVE_DUPLICATE_INFORMATION=true\
+        SORT_ORDER=coordinate \
+        RESTORE_ORIGINAL_QUALITIES=false \
+        REMOVE_ALIGNMENT_INFORMATION=false
+
+    picard MarkDuplicatesWithMateCigar \
+        INPUT=clear.bam \
+        METRICS_FILE=perc_dups.txt \
+        OUTPUT=${name} \
+        ASSUME_SORTED=true \
+        MINIMUM_DISTANCE=300 \
+        VALIDATION_STRINGENCY=SILENT \
+        READ_NAME_REGEX='[a-zA-Z0-9]+:[0-9]+:[a-zA-Z0-9]+:[0-9]+:([0-9]+):([0-9]+):([0-9]+).*'
     samtools index ${name}
     """
 }
