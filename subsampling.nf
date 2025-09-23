@@ -1,5 +1,10 @@
 include { callHotspots } from "./hotspots_calling"
 include { mark_duplicates; filter_nuclear; total_bam_stats } from "./aligning"
+include { get_container } from "./helpers"
+
+
+fastaContainer = get_container(params.genome_fasta_file)
+
 
 
 params.conda = "/home/sabramov/miniconda3/envs/jupyterlab"
