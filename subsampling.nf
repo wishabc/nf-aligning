@@ -1,5 +1,5 @@
 include { callHotspots; spot_score } from "./hotspots_calling"
-include { percent_dup } from "./stats"
+include { mark_duplicates; filter_nuclear; total_bam_stats } from "./aligning"
 
 
 params.conda = "/home/sabramov/miniconda3/envs/jupyterlab"
@@ -47,26 +47,46 @@ process subsample {
     """
 }
 
+process spot_score {
 
-process filter_nuclear {
-  conda params.conda
-  tag "${ag_id}"
-  scratch true
+    // Impossible to use anywhere except Altius cluster
+    //conda params.conda
+    module "bedops/2.4.35-typical:samtools/1.3:modwt/1.0:kentutil/302:hotspot2/2.1.1:jdk/1.8.0_92:gcc/4.7.2:R/3.2.5:picard/2.8.1:git/2.3.3:coreutils/8.25:bedtools/2.25.0:python/3.5.1:pysam/0.9.0:htslib/1.6.0:numpy/1.11.0:atlas-lapack/3.10.2:scipy/1.0.0:scikit-learn/0.18.1:preseq:/2.0.3:gsl/2.4"
+    publishDir "${params.outdir}/${ag_id}"
 
-  input:
-    tuple val(ag_id), path(bam), path(bam_index)
 
-  output:
-    tuple val(ag_id), path("${name}"), path("${name}.bai")
+    input:
+        tuple val(ag_id), path(bam_file), path(bam_file_index)
 
-  script:
-  name = "${ag_id}.filtered.bam"
-  """
-  cat "${params.nuclear_chroms}" \
-    | xargs samtools view --reference ${params.genome_fasta_file} -F 4 -b ${bam} > ${name}
+    output:
+        tuple val(ag_id), path("r1.*")
 
-  samtools index ${name}
-  """
+    script:
+    renamed_input = "r1.${bam_file.extension}"
+    genome_file = file(params.genome_fasta_file)
+    genome_prefix = "${genome_file.parent}/${genome_file.simpleName}"
+
+    """
+    # workaround for hotspots1 naming scheme...
+    # might need to check bam conversion
+	ln -s ${bam_file} ${renamed_input}
+	ln -s ${bam_file_index} ${renamed_input}.${bam_file_index.extension}
+    bash $moduleDir/bin/runhotspot.bash \
+      "${params.hotspots_dir}" \
+      "\$PWD" \
+      "${renamed_input}" \
+      "${genome_prefix}" \
+      ${params.chrominfo} \
+      "${params.readlength}" \
+      DNaseI
+
+    starch --header \
+        r1-both-passes/r1.hotspot.twopass.zscore.wig > r1.spots.starch
+
+    bash $moduleDir/bin/info.sh \
+      r1.spots.starch hotspot1 r1.spot.out \
+      > r1.hotspot.info
+    """
 }
 
 
@@ -175,11 +195,8 @@ workflow subsampleTest2 {
         | filter_nuclear
         | join(input_data.map(it -> tuple(it[0], it[3])))
         | subsample_with_pairs_frac
-        | percent_dup
-
-    // bams 
-    //     | preprocessBams
-    //     | spot_score
+        | mark_duplicates
+        | (callHotspots & total_bam_stats)
 }
 
 workflow filterAndCallHotspots {

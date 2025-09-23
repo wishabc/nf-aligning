@@ -4,49 +4,6 @@ nextflow.enable.dsl = 2
 include { get_container } from "./aligning"
 
 
-process spot_score {
-
-    // Impossible to use anywhere except Altius cluster
-    //conda params.conda
-    module "bedops/2.4.35-typical:samtools/1.3:modwt/1.0:kentutil/302:hotspot2/2.1.1:jdk/1.8.0_92:gcc/4.7.2:R/3.2.5:picard/2.8.1:git/2.3.3:coreutils/8.25:bedtools/2.25.0:python/3.5.1:pysam/0.9.0:htslib/1.6.0:numpy/1.11.0:atlas-lapack/3.10.2:scipy/1.0.0:scikit-learn/0.18.1:preseq:/2.0.3:gsl/2.4"
-    publishDir "${params.outdir}/${ag_id}"
-
-
-    input:
-        tuple val(ag_id), path(bam_file), path(bam_file_index)
-
-    output:
-        tuple val(ag_id), path("r1.*")
-
-    script:
-    renamed_input = "r1.${bam_file.extension}"
-    genome_file = file(params.genome_fasta_file)
-    genome_prefix = "${genome_file.parent}/${genome_file.simpleName}"
-
-    """
-    # workaround for hotspots1 naming scheme...
-    # might need to check bam conversion
-	ln -s ${bam_file} ${renamed_input}
-	ln -s ${bam_file_index} ${renamed_input}.${bam_file_index.extension}
-    bash $moduleDir/bin/runhotspot.bash \
-      "${params.hotspots_dir}" \
-      "\$PWD" \
-      "${renamed_input}" \
-      "${genome_prefix}" \
-      ${params.chrominfo} \
-      "${params.readlength}" \
-      DNaseI
-
-    starch --header \
-        r1-both-passes/r1.hotspot.twopass.zscore.wig > r1.spots.starch
-
-    bash $moduleDir/bin/info.sh \
-      r1.spots.starch hotspot1 r1.spot.out \
-      > r1.hotspot.info
-    """
-}
-
-
 // Need to containerize at some point
 process call_hotspots {
 	tag "${id}"

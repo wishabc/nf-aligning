@@ -3,6 +3,9 @@ include { filter_nuclear; total_bam_stats } from "./aligning"
 
 fastaContainer = get_container(params.genome_fasta_file)
 
+
+
+
 process percent_dup {
     scratch true
     container "${params.container}"
