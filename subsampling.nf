@@ -1,5 +1,5 @@
 include { callHotspots } from "./hotspots_calling"
-include { mark_duplicates; filter_nuclear; total_bam_stats } from "./aligning"
+include { mark_duplicates; filter_nuclear; total_bam_stats; convert_to_cram } from "./aligning"
 include { get_container } from "./helpers"
 
 
@@ -171,7 +171,6 @@ process mark_dups_subsample {
     containerOptions "${fastaContainer}"
     tag "${ag_id}"
     cpus 2
-    publishDir "${params.outdir}/${ag_id}"
 
     input:
         tuple val(ag_id), path(bam_file), path(bam_file_index)
@@ -241,7 +240,7 @@ workflow subsampleTest2 {
         | join(input_data.map(it -> tuple(it[0], it[3])))
         | subsample_with_pairs_frac
         | mark_dups_subsample
-        | (callHotspots & total_bam_stats)
+        | (callHotspots & total_bam_stats & convert_to_cram)
 }
 
 workflow filterAndCallHotspots {
