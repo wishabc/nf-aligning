@@ -64,7 +64,7 @@ process spot_score {
         tuple val(ag_id), path(bam_file), path(bam_file_index)
 
     output:
-        tuple val(ag_id), path("r1.*")
+        tuple val(ag_id), path("r1.spot.out")
 
     script:
     renamed_input = "r1.${bam_file.extension}"
