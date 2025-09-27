@@ -35,7 +35,6 @@ process take_r1_from_pair {
 process subsample {
     tag "${ag_id}"
     conda params.conda
-    publishDir "${params.outdir}/${ag_id}"
 
     input:
         tuple val(ag_id), path(bam_file), path(bam_file_index)
