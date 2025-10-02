@@ -4,25 +4,74 @@ include { filter_nuclear; total_bam_stats } from "./aligning"
 fastaContainer = get_container(params.genome_fasta_file)
 
 
+process run_preseq {
+    conda "/home/sabramov/miniconda3/envs/super-index"
+    tag "${sample_id}:${read_type}"
+    publishDir "${params.outdir}"
+
+    input:
+        tuple val(sample_id), path(cram_file), path(cram_file_index), val(read_type)
+    
+    output:
+        tuple val(sample_id), path(name)
+    
+    script:
+    name = "${sample_id}.preseq_hist.txt"
+    flag = (read_type == "paired") ? "-P" : ""
+    """
+    samtools view \
+        -h ${cram_file} \
+        \$(cat ${params.nuclear_chroms} | tr '\n' ' ') \
+        | preseq c_curve -B ${flag} -v - 2>&1 > ${name}
+    """
+}
+
+
+
+workflow nuclearStats {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.sample_id,
+            file(row.cram_file),
+            file(row.cram_index),
+            )
+        )
+        | filter_nuclear
+        | total_bam_stats
+}
+
+workflow preseq {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.sample_id,
+            file(row.cram_file),
+            file(row.cram_index),
+            row.read_type
+            )
+        )
+        | run_preseq
+}
 
 
 process percent_dup {
     scratch true
     container "${params.container}"
     containerOptions "${fastaContainer}"
-    tag "${ag_id}"
+    tag "${sample_id}"
     cpus 2
-    publishDir "${params.outdir}/${ag_id}"
+    publishDir "${params.outdir}/${sample_id}"
 
     input:
-        tuple val(ag_id), path(bam_file), path(bam_file_index)
+        tuple val(sample_id), path(bam_file), path(bam_file_index)
     
     output:
-        tuple val(ag_id), path(name), path(perc_dup)
+        tuple val(sample_id), path(name), path(perc_dup)
 
     script:
-    name = "${ag_id}.spotdups.txt"
-    perc_dup = "${ag_id}.percent_dup.txt"
+    name = "${sample_id}.spotdups.txt"
+    perc_dup = "${sample_id}.percent_dup.txt"
     """
     samtools view \
         -u \
@@ -60,84 +109,33 @@ process percent_dup {
 process collect_basic_stats {
     container "${params.container}"
     containerOptions "${fastaContainer}"
-    tag "${ag_id}"
-    publishDir "${params.outdir}/${ag_id}"
+    tag "${sample_id}"
+    publishDir "${params.outdir}/${sample_id}"
 
     input:
-        tuple val(ag_id), path(cram_file), path(cram_file_index)
+        tuple val(sample_id), path(cram_file), path(cram_file_index)
 
     output:
-        tuple val(ag_id), path(name)
+        tuple val(sample_id), path(name)
     
     script:
-    name = "${ag_id}.sequencing_stats.txt"
+    name = "${sample_id}.sequencing_stats.txt"
     """
-    echo -e "ag_id\tname\tvalue" > ${name}
-    echo -e "${ag_id}\tfiltered_aligned\t\$(samtools view --reference ${params.genome_fasta_file} -c ${cram_file})" >> ${name}
-    echo -e "${ag_id}\tduplicates\t\$(samtools view -f 1024 --reference ${params.genome_fasta_file} -c ${cram_file})" >> ${name}
+    echo -e "sample_id\tname\tvalue" > ${name}
+    echo -e "${sample_id}\tfiltered_aligned\t\$(samtools view --reference ${params.genome_fasta_file} -c ${cram_file})" >> ${name}
+    echo -e "${sample_id}\tduplicates\t\$(samtools view -f 1024 --reference ${params.genome_fasta_file} -c ${cram_file})" >> ${name}
     """
 }
 
-
-process run_preseq {
-    conda "/home/sabramov/miniconda3/envs/super-index"
-    tag "${ag_id}:${read_type}"
-    publishDir "${params.outdir}"
-
-    input:
-        tuple val(ag_id), path(cram_file), path(cram_file_index), val(read_type)
-    
-    output:
-        tuple val(ag_id), path(name)
-    
-    script:
-    name = "${ag_id}.preseq_hist.txt"
-    flag = (read_type == "paired") ? "-P" : ""
-    """
-    samtools view \
-        -h ${cram_file} \
-        \$(cat ${params.nuclear_chroms} | tr '\n' ' ') \
-        | preseq c_curve -B ${flag} -v - 2>&1 > ${name}
-    """
-}
 
 workflow {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
-            row.ag_id,
+            row.sample_id,
             file(row.cram_file),
             file(row.cram_index),
             )
         )
         | (collect_basic_stats & percent_dup)
-}
-
-workflow nuclearStats {
-    Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(
-            row.ag_id,
-            file(row.cram_file),
-            file(row.cram_index),
-            )
-        )
-        | filter { 
-            !(file("${params.outdir}/${it[0]}/${it[0]}.total_sequencing_stats.txt").exists())
-         }
-        | filter_nuclear
-        | total_bam_stats
-}
-
-workflow preseq {
-    Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(
-            row.ag_id,
-            file(row.cram_file),
-            file(row.cram_index),
-            row.read_type
-            )
-        )
-        | run_preseq
 }
