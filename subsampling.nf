@@ -206,7 +206,7 @@ workflow spot1score {
     bams = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
-            row.ag_id, 
+            row.sample_id, 
             file(row.cram_file), 
             file("${row.cram_file}.crai")))
         | preprocessBams
@@ -214,24 +214,10 @@ workflow spot1score {
 }
 
 
-workflow subsampleTest {
-    Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.cram_file), file(row.cram_index)))
-        | filter_nuclear
-        | subsample_with_pairs
-        | map(it -> tuple(it[0], it[1], it[2]))
-        | callHotspots
-
-    // bams 
-    //     | preprocessBams
-    //     | spot_score
-}
-
-workflow subsampleTest2 {
+workflow subsampleToFrac {
     input_data = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.cram_file), file(row.cram_index), row.frac))
+        | map(row -> tuple(row.sample_id, file(row.cram_file), file(row.cram_index), row.frac))
     
     input_data
         | map(it -> tuple(it[0], it[1], it[2]))
@@ -245,7 +231,7 @@ workflow subsampleTest2 {
 workflow filterAndCallHotspots {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.bam_file), file(row.bam_index)))
+        | map(row -> tuple(row.sample_id, file(row.bam_file), file(row.bam_index)))
         | filter_nuclear
         | callHotspots
 }
@@ -260,7 +246,7 @@ workflow normalizeDensity {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
-            row.ag_id, 
+            row.sample_id, 
             file(get_density_path(row.cram_file, ".subsampled_pairs.bam")),
             file(row.cram_file),
             file(row.cram_index)
@@ -273,7 +259,7 @@ workflow tmp {
     metadata = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
-            row.ag_id, 
+            row.sample_id, 
             file(get_density_path(get_density_path(row.cram_file, ".filtered.cram"), ".cram")),
             file(row.cram_file),
             file(row.cram_index)
