@@ -5,6 +5,7 @@ nextflow.enable.dsl = 2
 
 params.conda = "$moduleDir/environment.yml"
 
+
 process download_encode {
     conda params.conda
     maxForks 2
@@ -38,8 +39,9 @@ workflow downloadEncode {
         convert_to_cram.out
 }
 
-params.encode_meta = "/home/sabramov/encode_chipseq.tsv"
+
 workflow {
+    params.encode_meta = "/home/sabramov/encode_chipseq.tsv"
     metadata = Channel
 		.fromPath(params.encode_meta)
 		.splitCsv(header:true, sep:'\t')

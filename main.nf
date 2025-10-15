@@ -15,8 +15,8 @@ def remove_ambiguous_bases(adapter) {
 
 
 process symlink_or_download {
-    publishDir "${params.outdir}/${ag_id}/stats", pattern: "${metadata}"
-    publishDir "${params.outdir}/${ag_id}", pattern: "${srr}/*.fastq.gz"
+    publishDir "${params.outdir}/${sample_id}/stats", pattern: "${metadata}"
+    publishDir "${params.outdir}/${sample_id}", pattern: "${srr}/*.fastq.gz"
     cpus params.threads
     tag "${srr}"
     maxForks 4
@@ -25,10 +25,10 @@ process symlink_or_download {
     container "${params.container}"
 
     input:
-        tuple val(ag_id), val(srr)
+        tuple val(sample_id), val(srr)
     output:
-        tuple val(ag_id), val(srr), path("${srr}/${srr}_1.fastq.gz"), path("${srr}/${srr}_2.fastq.gz"), path("${srr}/${srr}.fastq.gz"), emit: fastq
-        tuple val(srr), path(metadata), emit: meta
+        tuple val(sample_id), val(srr), path("${srr}/${srr}_1.fastq.gz"), path("${srr}/${srr}_2.fastq.gz"), path("${srr}/${srr}.fastq.gz"), emit: fastq
+        tuple val(sample_id), path(metadata), emit: meta
 
     script:
     metadata = "${srr}_info.json"
@@ -55,7 +55,7 @@ process symlink_or_download {
 workflow alignFromSRA {
     ids_channel = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, row.align_id))
+        | map(row -> tuple(row.sample_id, row.align_id))
         | unique { it[1] }
         | set_key_for_group_tuple
 
@@ -78,7 +78,7 @@ workflow {
         | splitCsv(header:true, sep:'\t')
         | map(
             row -> tuple(
-                row.ag_id,
+                row.sample_id,
                 row.align_id,
                 row.reads1,
                 row.type == 'paired' ? row.reads2 : "${row.reads1}.mock",
