@@ -32,7 +32,7 @@ process call_hotspots {
         [[ -w "\$(pwd)" ]] || { echo "PWD not writable"; exit 1; }
 
         out_idx="\$(pwd)/${bam_file_index}"
-        samtools index -o \$out_idx "${bam_file}"
+        samtools index "${bam_file}" \$out_idx
     fi
 
     hotspot3 \
