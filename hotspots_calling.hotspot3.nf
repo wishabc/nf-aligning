@@ -26,6 +26,12 @@ process call_hotspots {
     fdrs = params.fdrs.tokenize(',').join(' ')
     save_debug = params.save_debug ? "--debug" : ""
 	"""
+    if [ ! -e "${bam_file_index}" ]; then
+        # covers: missing file OR broken symlink
+        unlink "${bam_file_index}"
+        samtools index "${bam_file}"
+    fi
+
     hotspot3 \
         ${sample_id} \
         --bam ${bam_file} \
