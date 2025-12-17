@@ -29,7 +29,9 @@ process call_hotspots {
     if [ ! -e "${bam_file_index}" ]; then
         # covers: missing file OR broken symlink
         unlink "${bam_file_index}"
-        out_idx="\$PWD/${bam_file_index}"
+        [[ -w "\$(pwd)" ]] || { echo "PWD not writable"; exit 1; }
+
+        out_idx="\$(pwd)/${bam_file_index}"
         samtools index -o \$out_idx "${bam_file}"
     fi
 
