@@ -29,7 +29,8 @@ process call_hotspots {
     if [ ! -e "${bam_file_index}" ]; then
         # covers: missing file OR broken symlink
         unlink "${bam_file_index}"
-        samtools index "${bam_file}"
+        out_idx="\$PWD/${bam_file_index}"
+        samtools index -o \$out_idx "${bam_file}"
     fi
 
     hotspot3 \
