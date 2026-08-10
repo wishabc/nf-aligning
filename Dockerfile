@@ -7,12 +7,23 @@ RUN apt-get update && apt-get install -y \
 
 ###########
 # Kentutils
-FROM build-base as build-kentutils
-RUN mkdir /scripts && rsync -azvP rsync://hgdownload.soe.ucsc.edu/genome/admin/exe/linux.x86_64/ /scripts
+# Build from source to pin version to v438 
+FROM ubuntu:18.04 AS build-kentutils
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+      build-essential \
+      rsync \
+      libpng-dev \
+      uuid-dev \
+      libmysqlclient-dev \
+      zlib1g-dev
+RUN rsync -a rsync://hgdownload.soe.ucsc.edu/genome/admin/exe/userApps.archive/userApps.v438.src.tgz . \
+      && tar xzf userApps.v438.src.tgz \
+      && cd userApps \
+      && make utils MACHTYPE=x86_64
 
 ##########
 # Hotspot1
-
 FROM build-base AS build-hotspot1
 RUN apt-get install -y \
       build-essential \
@@ -52,8 +63,7 @@ RUN apt-get update && apt-get install -y \
       libcurl4 \
       libkrb5-dev \
       libgsl-dev \
-      python-minimal \
-      r-base-core
+      python-minimal
 
 ENV HOTSPOT_DIR=/hotspot1
 COPY --from=build-hotspot1 /hotspot/hotspot-distr/ $HOTSPOT_DIR
@@ -61,7 +71,7 @@ ENV PATH=$HOTSPOT_DIR/hotspot-deploy/bin:$PATH
 COPY --from=build-hotspot2 /hotspot2/bin /usr/local/bin/
 COPY --from=build-hotspot2 /hotspot2/scripts /usr/local/bin/
 COPY --from=build-hotspot2 /modwt/bin /usr/local/bin/
-COPY --from=build-kentutils /scripts/ /usr/local/bin/
+COPY --from=build-kentutils /userApps/bin/ /usr/local/bin/
 COPY --from=build-conda /opt/conda /opt/conda
 ENV PATH=/opt/conda/envs/babachi/bin:$PATH
 ARG PATH=/opt/conda/envs/babachi/bin:$PATH
