@@ -4,20 +4,22 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - python=3.8
-  - pysam
-  - bedops
-  - bcftools=1.15
-  - plink2
-  - bwa
-  - bedtools
-  - pyfaidx
-  - pytables
-  - samtools=1.15
-  - fastp
-  - picard
-  - pigz
-  - sra-tools
-  - ffq
-  - macs2
+  - python=3.8.13
+  - pysam=0.19.1
+  - bedops=2.4.41
+  - bcftools=1.15.1
+  - plink2=2.00a3.3
+  - bwa=0.7.17
+  - bedtools=2.30.0
+  - pyfaidx=0.7.1
+  - pytables=3.7.0
+  - samtools=1.15.1
+  - fastp=0.23.2
+  - picard=2.27.4
+  - pigz=2.6
+  - sra-tools=2.10.0
+  - ffq=0.3.0
+  - macs2=2.2.7.1
+  - r-base=4.2.1
+
 prefix: /home/sabramov/miniconda3/envs/babachi
