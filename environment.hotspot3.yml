@@ -1,0 +1,17 @@
+name: hotspot3
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - samtools
+  - libflint
+  - ucsc-bedgraphtobigwig
+  - bioconda::ucsc-bedtobigbed
+  - bioconda::pybigwig
+  - bioconda::bedops
+  - bottleneck
+  - mawk
+  - pyarrow<21

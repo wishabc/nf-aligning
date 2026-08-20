@@ -3,6 +3,9 @@ nextflow.enable.dsl = 2
 
 include { get_container } from "./aligning"
 
+def fastaContainer = get_container(params.genome_fasta_file)
+def chrominfoContainer = get_container(params.nuclear_chrom_sizes)
+
 
 // Need to containerize at some point
 process call_hotspots {
@@ -12,7 +15,9 @@ process call_hotspots {
     memory { 60.GB + 20.GB * task.attempt }
 
 	cpus 6
-    conda "/home/sabramov/miniconda3/envs/jupyterlab"
+    container "${params.container}"
+    containerOptions "${fastaContainer} ${chrominfoContainer}"
+    // conda "/home/sabramov/miniconda3/envs/jupyterlab"
 
 	input:
 	    tuple val(sample_id), path(bam_file), path(bam_file_index)
@@ -59,7 +64,8 @@ process call_hotspots_from_cutcounts {
     memory { 60.GB + 20.GB * task.attempt }
 
 	cpus 6
-    conda "/home/sabramov/miniconda3/envs/jupyterlab"
+    //conda "/home/sabramov/miniconda3/envs/jupyterlab"
+    container "${params.container}"
 
 	input:
 	    tuple val(sample_id), path(cutcounts), path(cutcounts_index), path(total_cutcounts)
@@ -98,7 +104,8 @@ process call_hotspots_from_pvals {
     memory { 50.GB + 20.GB * task.attempt }
 
 	cpus 8
-    conda "/home/sabramov/miniconda3/envs/jupyterlab"
+    //conda "/home/sabramov/miniconda3/envs/jupyterlab"
+    container "${params.container}"
 
 	input:
 	    tuple val(sample_id), path(cutcounts), path(cutcounts_index), path(total_cutcounts), path(pvals_parquet)

@@ -1,0 +1,122 @@
+Bootstrap: docker
+From: ubuntu:18.04
+Stage: build-kentutils
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update && apt-get install -y \
+        build-essential \
+        rsync \
+        libpng-dev \
+        uuid-dev \
+        libmysqlclient-dev \
+        zlib1g-dev
+    cd /
+    rsync -a rsync://hgdownload.soe.ucsc.edu/genome/admin/exe/userApps.archive/userApps.v438.src.tgz .
+    tar xzf userApps.v438.src.tgz
+    cd userApps
+    make utils MACHTYPE=x86_64
+
+Bootstrap: docker
+From: condaforge/mambaforge:latest
+Stage: build-hotspot1
+
+%post
+    apt-get update && apt-get install -y \
+        bash \
+        rsync \
+        build-essential \
+        git \
+        libgsl-dev \
+        wget
+    git clone https://github.com/StamLab/hotspot.git
+    cd hotspot
+    git checkout v4.1.1
+    cd hotspot-distr/hotspot-deploy
+    make
+
+Bootstrap: docker
+From: condaforge/mambaforge:latest
+Stage: build-hotspot2
+
+%post
+    apt-get update && apt-get install -y \
+        bash \
+        rsync \
+        build-essential
+    git clone https://github.com/Altius/hotspot2.git
+    cd hotspot2
+    make
+    cd /
+    git clone https://github.com/StamLab/modwt.git
+    cd modwt
+    git checkout 28e9f479c737836ffc870199f2468e30659ab38d
+    make
+
+Bootstrap: docker
+From: condaforge/mambaforge:latest
+Stage: build-conda
+
+%files
+    environment.yml /environment.yml
+
+%post
+    apt-get update && apt-get install -y \
+        bash \
+        rsync \
+        build-essential
+    mamba env create -n babachi --file /environment.yml
+
+Bootstrap: docker
+From: condaforge/mambaforge:latest
+Stage: build-hotspot3
+
+%files
+    environment.hotspot3.yml /environment.hotspot3.yml
+
+%post
+    apt-get update && apt-get install -y \
+        bash \
+        rsync \
+        build-essential
+    mamba env create -n hotspot3 --file /environment.hotspot3.yml
+    /opt/conda/envs/hotspot3/bin/pip install hotspot3
+
+Bootstrap: docker
+From: ubuntu:18.04
+
+%files from build-hotspot1
+    /hotspot/hotspot-distr /hotspot1
+
+%files from build-hotspot2
+    /hotspot2/bin /usr/local/bin
+    /hotspot2/scripts /usr/local/bin
+    /modwt/bin /usr/local/bin
+
+%files from build-kentutils
+    /userApps/bin /usr/local/bin
+
+%files from build-conda
+    /opt/conda /opt/conda
+
+%files from build-hotspot3
+    /opt/conda/envs/hotspot3 /opt/conda/envs/hotspot3
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update && apt-get install -y \
+        bash \
+        bc \
+        libcurl4 \
+        libkrb5-dev \
+        libgsl-dev \
+        python-minimal
+    ln -sf /usr/bin/python2.7 /usr/bin/python2
+    ln -sf /bin/bash /bin/sh
+
+%environment
+    export HOTSPOT_DIR=/hotspot1
+    export PATH=/opt/conda/envs/hotspot3/bin:/hotspot1/hotspot-deploy/bin:/opt/conda/envs/babachi/bin:$PATH
+    export PYTHONNOUSERSITE=1
+    export HOME="${NXF_TASK_WORKDIR:-/tmp}"
+    export NUMBA_CACHE_DIR="$HOME/.numba_cache"
